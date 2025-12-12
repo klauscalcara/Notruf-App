@@ -95,6 +95,12 @@
             color: #1e293b;
             background: white;
         }
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+            color: #1e293b;
+            background: white;
+        }
 
         input:focus {
             outline: none;
@@ -2210,7 +2216,7 @@
             try {
                 // Register service worker first (if not already registered)
                 if (!swRegistration) {
-                    swRegistration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+                    swRegistration = await navigator.serviceWorker.register('./firebase-messaging-sw.js');
                     console.log('Service Worker registered:', swRegistration);
                 }
 
@@ -2483,7 +2489,7 @@
 
             try {
                 // Register service worker and save globally
-                swRegistration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+                swRegistration = await navigator.serviceWorker.register('./firebase-messaging-sw.js');
                 console.log('Service Worker registered in initPushNotifications');
             } catch (error) {
                 console.error('Service Worker registration error:', error);
