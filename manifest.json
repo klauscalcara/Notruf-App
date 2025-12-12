@@ -1,0 +1,24 @@
+{
+  "name": "Notruf-App",
+  "short_name": "Notruf",
+  "description": "Sicher und schnell im Einsatz",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1e293b",
+  "theme_color": "#ef4444",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect fill='%23ef4444' width='192' height='192' rx='32'/%3E%3Cpath fill='white' d='M96 48L64 67v30.45c0 25.25 17.05 48.8 40 54.55 22.95-5.75 40-29.3 40-54.55V67l-40-19zm-5 77.5h10V135H91v-9.5zm10-15H91c0-16.25 15-15 15-25 0-5.5-4.5-10-10-10s-10 4.5-10 10H76c0-11.05 8.95-20 20-20s20 8.95 20 20c0 12.5-15 13.75-15 25z'/%3E%3C/svg%3E",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect fill='%23ef4444' width='512' height='512' rx='96'/%3E%3Cpath fill='white' d='M256 96L128 160v96c0 80 53.75 154 126 172 72.25-18 126-92 126-172v-96L256 96zm-16 248h32v16h-32v-16zm32-48h-32c0-52 48-48 48-80 0-17.6-14.4-32-32-32s-32 14.4-32 32h-32c0-35.36 28.64-64 64-64s64 28.64 64 64c0 40-48 44-48 80z'/%3E%3C/svg%3E",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

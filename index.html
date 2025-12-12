@@ -1,0 +1,3767 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notruf-App</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1e293b">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f8fafc;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Login Screen */
+        .login-screen {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+        }
+
+        .login-container {
+            background: white;
+            padding: 3rem 2.5rem;
+            border-radius: 1rem;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            max-width: 400px;
+            width: 90%;
+        }
+
+        .logo {
+            width: 80px;
+            height: 80px;
+            background: #ef4444;
+            border-radius: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+        }
+
+        .logo-icon {
+            width: 50px;
+            height: 50px;
+            fill: white;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 1.75rem;
+            margin-bottom: 0.5rem;
+            color: #1e293b;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #64748b;
+            margin-bottom: 2rem;
+            font-size: 0.95rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #334155;
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+
+        input {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+            color: #1e293b;
+            background: white;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #ef4444;
+        }
+
+        input::placeholder {
+            color: #94a3b8;
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 1rem;
+            background: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 1.05rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-login:hover {
+            background: #dc2626;
+        }
+
+        .btn-login:active {
+            transform: scale(0.98);
+        }
+
+        .demo-info {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: #f1f5f9;
+            border-radius: 0.5rem;
+            font-size: 0.85rem;
+            color: #475569;
+            text-align: center;
+        }
+
+        .error-message {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 0.875rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        /* Main App Screen */
+        .app-screen {
+            display: none;
+            min-height: 100vh;
+            background: linear-gradient(180deg, #1e293b 0%, #334155 100%);
+        }
+
+        .app-screen.active {
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* History Screen */
+        .history-screen {
+            display: none;
+            min-height: 100vh;
+            background: linear-gradient(180deg, #1e293b 0%, #334155 100%);
+            flex-direction: column;
+        }
+
+        .history-screen.active {
+            display: flex;
+        }
+
+        .history-content {
+            flex: 1;
+            padding: 1.5rem;
+            overflow-y: auto;
+        }
+
+        .history-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: rgba(255,255,255,0.1);
+            border-radius: 1rem;
+            padding: 1.5rem 1rem;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 900;
+            color: white;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            font-size: 0.875rem;
+            color: rgba(255,255,255,0.7);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .history-item {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            position: relative;
+            transition: all 0.2s;
+        }
+
+        .history-item:hover {
+            background: rgba(255,255,255,0.08);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .history-item.has-red-dot::before {
+            content: '';
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            width: 12px;
+            height: 12px;
+            background: #ef4444;
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .history-item-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .history-item-type {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: white;
+        }
+
+        .history-item-type.polizei {
+            color: #ef4444;
+        }
+
+        .history-item-type.support {
+            color: #f97316;
+        }
+
+        .history-status-badge {
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-active {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .status-in-progress {
+            background: rgba(234, 179, 8, 0.2);
+            color: #eab308;
+            border: 1px solid rgba(234, 179, 8, 0.3);
+        }
+
+        .status-waiting-employee {
+            background: rgba(249, 115, 22, 0.2);
+            color: #f97316;
+            border: 1px solid rgba(249, 115, 22, 0.3);
+        }
+
+        .status-waiting-admin {
+            background: rgba(6, 182, 212, 0.2);
+            color: #06b6d4;
+            border: 1px solid rgba(6, 182, 212, 0.3);
+        }
+
+        .status-completed {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .status-false-alarm {
+            background: rgba(148, 163, 184, 0.2);
+            color: #94a3b8;
+            border: 1px solid rgba(148, 163, 184, 0.3);
+        }
+
+        .history-item-details {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            color: rgba(255,255,255,0.8);
+            font-size: 0.875rem;
+        }
+
+        .history-item-detail {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .history-item-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .history-btn {
+            padding: 0.625rem 1rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+        }
+
+        .history-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .history-btn-primary {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .history-btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+
+        .history-btn-secondary {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .loading-message {
+            text-align: center;
+            color: rgba(255,255,255,0.5);
+            padding: 3rem;
+            font-size: 1.125rem;
+        }
+
+        .empty-message {
+            text-align: center;
+            color: rgba(255,255,255,0.5);
+            padding: 3rem;
+        }
+
+        .empty-message svg {
+            width: 64px;
+            height: 64px;
+            margin-bottom: 1rem;
+            opacity: 0.3;
+        }
+
+        /* Dashboard Screen */
+        .dashboard-screen {
+            display: none;
+            min-height: 100vh;
+            background: linear-gradient(180deg, #1e293b 0%, #334155 100%);
+            flex-direction: column;
+        }
+
+        .dashboard-screen.active {
+            display: flex;
+        }
+
+        .dashboard-tabs {
+            display: flex;
+            background: rgba(15, 23, 42, 0.5);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .dashboard-tab {
+            flex: 1;
+            padding: 1rem;
+            background: transparent;
+            border: none;
+            color: rgba(255,255,255,0.6);
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-bottom: 2px solid transparent;
+        }
+
+        .dashboard-tab:hover {
+            background: rgba(255,255,255,0.05);
+            color: rgba(255,255,255,0.8);
+        }
+
+        .dashboard-tab.active {
+            color: white;
+            border-bottom-color: #3b82f6;
+            background: rgba(59, 130, 246, 0.1);
+        }
+
+        .dashboard-tab-content {
+            display: none;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .dashboard-tab-content.active {
+            display: block;
+        }
+
+        .dashboard-content {
+            padding: 1.5rem;
+        }
+
+        .dashboard-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .dashboard-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .dashboard-item {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            transition: all 0.2s;
+        }
+
+        .dashboard-item:hover {
+            background: rgba(255,255,255,0.08);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .dashboard-item-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+            gap: 1rem;
+        }
+
+        .dashboard-item-info {
+            flex: 1;
+        }
+
+        .dashboard-item-user {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 0.25rem;
+        }
+
+        .dashboard-item-dept {
+            font-size: 0.875rem;
+            color: rgba(255,255,255,0.6);
+        }
+
+        .dashboard-item-actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-top: 1rem;
+        }
+
+        .dashboard-btn {
+            padding: 0.625rem 1rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+        }
+
+        .dashboard-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .dashboard-btn-take {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .dashboard-btn-complete {
+            background: #10b981;
+            color: white;
+        }
+
+        .dashboard-btn-view {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        /* Overview Tab */
+        .overview-section {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .overview-section h3 {
+            color: white;
+            font-size: 1.125rem;
+            margin-bottom: 1rem;
+        }
+
+        .overview-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+
+        .overview-card {
+            background: rgba(255,255,255,0.05);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .overview-label {
+            font-size: 0.875rem;
+            color: rgba(255,255,255,0.7);
+            margin-bottom: 0.5rem;
+        }
+
+        .overview-value {
+            font-size: 2.5rem;
+            font-weight: 900;
+            color: white;
+        }
+
+        .top-users-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .top-user-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(255,255,255,0.05);
+            border-radius: 0.75rem;
+            padding: 1rem 1.5rem;
+        }
+
+        .top-user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .top-user-rank {
+            font-size: 1.5rem;
+            font-weight: 900;
+            color: rgba(255,255,255,0.5);
+            min-width: 2rem;
+        }
+
+        .top-user-name {
+            font-size: 1rem;
+            font-weight: 600;
+            color: white;
+        }
+
+        .top-user-count {
+            font-size: 1.5rem;
+            font-weight: 900;
+            color: #3b82f6;
+        }
+
+        /* Participants Tab */
+        .participants-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+        }
+
+        .participants-header h3 {
+            color: white;
+            font-size: 1.125rem;
+            margin: 0;
+        }
+
+        .btn-add-user {
+            padding: 0.75rem 1.5rem;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 0.75rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-add-user:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        .participants-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .participant-item {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .participant-info {
+            flex: 1;
+        }
+
+        .participant-name {
+            font-size: 1.125rem;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 0.25rem;
+        }
+
+        .participant-details {
+            font-size: 0.875rem;
+            color: rgba(255,255,255,0.6);
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .participant-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.375rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge-admin {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .badge-user {
+            background: rgba(59, 130, 246, 0.2);
+            color: #3b82f6;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        .badge-superuser {
+            background: rgba(251, 191, 36, 0.2);
+            color: #fbbf24;
+            border: 1px solid rgba(251, 191, 36, 0.3);
+        }
+
+        .participant-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .participant-btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .participant-btn-edit {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .participant-btn-delete {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .participant-btn:hover {
+            transform: translateY(-1px);
+        }
+
+        /* Report Screen */
+        .report-screen {
+            display: none;
+            min-height: 100vh;
+            background: linear-gradient(180deg, #1e293b 0%, #334155 100%);
+            flex-direction: column;
+        }
+
+        .report-screen.active {
+            display: flex;
+        }
+
+        .report-content {
+            flex: 1;
+            padding: 1.5rem;
+            overflow-y: auto;
+        }
+
+        .report-section {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .report-section.readonly {
+            background: rgba(148, 163, 184, 0.1);
+            border-color: rgba(148, 163, 184, 0.2);
+        }
+
+        .report-section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .report-section-title {
+            font-size: 1.125rem;
+            font-weight: 700;
+            color: white;
+        }
+
+        .report-section-badge {
+            padding: 0.375rem 0.75rem;
+            border-radius: 0.375rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge-employee {
+            background: rgba(59, 130, 246, 0.2);
+            color: #3b82f6;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        .badge-admin {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .report-textarea {
+            width: 100%;
+            min-height: 150px;
+            padding: 1rem;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 0.75rem;
+            color: white;
+            font-family: inherit;
+            font-size: 0.9375rem;
+            line-height: 1.6;
+            resize: vertical;
+        }
+
+        .report-textarea:focus {
+            outline: none;
+            border-color: #3b82f6;
+            background: rgba(255,255,255,0.08);
+        }
+
+        .report-textarea:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .report-actions {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .report-btn {
+            padding: 0.875rem 1.5rem;
+            border: none;
+            border-radius: 0.75rem;
+            font-size: 0.9375rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .report-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .report-btn-primary {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .report-btn-success {
+            background: #10b981;
+            color: white;
+        }
+
+        .report-btn-secondary {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .report-info-box {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            border-radius: 0.75rem;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            color: rgba(255,255,255,0.9);
+            font-size: 0.875rem;
+            line-height: 1.6;
+        }
+
+        /* User Dialog */
+        .user-dialog-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(4px);
+            z-index: 10000;
+            padding: 1rem;
+            overflow-y: auto;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .user-dialog-overlay.active {
+            display: flex;
+        }
+
+        .user-dialog {
+            background: linear-gradient(180deg, #1e293b 0%, #334155 100%);
+            border-radius: 1.5rem;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.1);
+            animation: slideUp 0.3s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .user-dialog-header {
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .user-dialog-header h2 {
+            color: white;
+            font-size: 1.5rem;
+            margin: 0;
+        }
+
+        .user-dialog-close {
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: white;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .user-dialog-close:hover {
+            background: rgba(239, 68, 68, 0.3);
+            transform: rotate(90deg);
+        }
+
+        .user-dialog-content {
+            padding: 2rem;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+
+        .user-photo-placeholder {
+            width: 120px;
+            height: 120px;
+            background: rgba(255,255,255,0.05);
+            border: 2px dashed rgba(255,255,255,0.2);
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 2rem;
+            color: rgba(255,255,255,0.4);
+        }
+
+        .photo-placeholder-text {
+            font-size: 0.75rem;
+            margin-top: 0.5rem;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            color: rgba(255,255,255,0.9);
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 0.5rem;
+            color: white;
+            font-family: inherit;
+            font-size: 1rem;
+            transition: all 0.2s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #3b82f6;
+            background: rgba(255,255,255,0.08);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .form-group input::placeholder,
+        .form-group textarea::placeholder {
+            color: rgba(255,255,255,0.4);
+        }
+
+        .form-group select {
+            cursor: pointer;
+        }
+
+        .form-group select option {
+            background: #1e293b;
+            color: white;
+            padding: 0.5rem;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .btn-primary,
+        .btn-secondary {
+            flex: 1;
+            padding: 0.875rem 1.5rem;
+            border: none;
+            border-radius: 0.75rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2563eb;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-secondary {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.15);
+        }
+
+        /* Header */
+        .app-header {
+            padding: 1rem 1.5rem;
+            background: rgba(15, 23, 42, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .app-title {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .app-icon {
+            width: 40px;
+            height: 40px;
+            background: #ef4444;
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .app-icon svg {
+            width: 24px;
+            height: 24px;
+            fill: white;
+        }
+
+        .app-title-text h2 {
+            color: white;
+            font-size: 1.25rem;
+            margin-bottom: 0.125rem;
+        }
+
+        .app-title-text p {
+            color: #94a3b8;
+            font-size: 0.85rem;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .header-btn {
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background 0.2s;
+        }
+
+        .header-btn:hover {
+            background: rgba(255,255,255,0.15);
+        }
+
+        .header-btn.primary {
+            background: #3b82f6;
+        }
+
+        .header-btn.primary:hover {
+            background: #2563eb;
+        }
+
+        /* GPS Status */
+        .gps-status {
+            margin: 1.5rem;
+            padding: 1rem 1.25rem;
+            background: rgba(16, 185, 129, 0.15);
+            border: 2px solid rgba(16, 185, 129, 0.3);
+            border-radius: 0.75rem;
+            color: white;
+        }
+
+        .gps-status h3 {
+            font-size: 0.95rem;
+            margin-bottom: 0.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .gps-status p {
+            font-size: 0.85rem;
+            color: #94a3b8;
+        }
+
+        .gps-status .gps-coords {
+            font-family: monospace;
+            color: #a5f3fc;
+        }
+
+        /* Emergency Buttons */
+        .emergency-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem 1.5rem;
+            gap: 2rem;
+        }
+
+        .emergency-section {
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .emergency-label {
+            color: white;
+            font-size: 1.5rem;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .emergency-hint {
+            color: #94a3b8;
+            font-size: 0.9rem;
+            text-align: center;
+            margin-bottom: 1.25rem;
+        }
+
+        .emergency-btn {
+            width: 100%;
+            min-height: 200px;
+            border: 3px dashed transparent;
+            border-radius: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .emergency-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(0,0,0,0.2) 0%, transparent 100%);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .emergency-btn:hover::before {
+            opacity: 1;
+        }
+
+        .emergency-btn-polizei {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            border-color: #fca5a5;
+        }
+
+        .emergency-btn-polizei:hover {
+            transform: scale(1.02);
+            box-shadow: 0 20px 60px rgba(239, 68, 68, 0.4);
+        }
+
+        .emergency-btn-polizei:active {
+            transform: scale(0.98);
+        }
+
+        .emergency-btn-support {
+            background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+            border-color: #fdba74;
+        }
+
+        .emergency-btn-support:hover {
+            transform: scale(1.02);
+            box-shadow: 0 20px 60px rgba(249, 115, 22, 0.4);
+        }
+
+        .emergency-btn-support:active {
+            transform: scale(0.98);
+        }
+
+        .emergency-btn-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .emergency-icon {
+            width: 100px;
+            height: 100px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+        }
+
+        .emergency-icon svg {
+            width: 60px;
+            height: 60px;
+            fill: white;
+        }
+
+        .emergency-title {
+            color: white;
+            font-size: 1.5rem;
+            font-weight: 700;
+            text-align: center;
+        }
+
+        .emergency-subtitle {
+            color: rgba(255,255,255,0.9);
+            font-size: 0.95rem;
+            text-align: center;
+            margin-top: 0.5rem;
+        }
+
+        /* Footer */
+        .app-footer {
+            padding: 1rem;
+            text-align: center;
+            color: #64748b;
+            font-size: 0.85rem;
+        }
+
+        /* Loading */
+        /* Countdown Overlay */
+        .countdown-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, #dc2626 0%, #7f1d1d 100%);
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            flex-direction: column;
+            animation: pulse 1s ease-in-out infinite;
+        }
+
+        .countdown-overlay.show {
+            display: flex;
+        }
+
+        .countdown-overlay.support {
+            background: linear-gradient(135deg, #ea580c 0%, #7c2d12 100%);
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.95; }
+            50% { opacity: 1; }
+        }
+
+        .countdown-content {
+            text-align: center;
+            color: white;
+        }
+
+        .countdown-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .countdown-number {
+            font-size: 12rem;
+            font-weight: 900;
+            line-height: 1;
+            margin: 2rem 0;
+            text-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            animation: countPulse 1s ease-in-out;
+        }
+
+        @keyframes countPulse {
+            0% { transform: scale(0.8); opacity: 0; }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .countdown-message {
+            font-size: 1.25rem;
+            margin-bottom: 3rem;
+            opacity: 0.9;
+        }
+
+        .btn-cancel-countdown {
+            padding: 1.25rem 3rem;
+            background: rgba(255,255,255,0.95);
+            color: #dc2626;
+            border: none;
+            border-radius: 1rem;
+            font-size: 1.5rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-cancel-countdown:hover {
+            transform: scale(1.05);
+            background: white;
+        }
+
+        .btn-cancel-countdown:active {
+            transform: scale(0.95);
+        }
+
+        .loading {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+        .loading.show {
+            display: flex;
+        }
+
+        .loading-content {
+            text-align: center;
+            color: white;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(255,255,255,0.2);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translateX(-50%) translateY(-100px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(-50%) translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateX(-50%) translateY(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(-50%) translateY(-100px);
+                opacity: 0;
+            }
+        }
+
+        /* Hidden */
+        .hidden {
+            display: none !important;
+        }
+        /* Mobile Optimizations */
+        @media (max-width: 768px) {
+            .login-container {
+                padding: 1.5rem;
+                max-width: 100%;
+            }
+
+            .app-header {
+                padding: 0.75rem 1rem;
+                flex-wrap: wrap;
+                gap: 0.5rem;
+            }
+
+            .app-title {
+                font-size: 0.875rem;
+            }
+
+            .logo {
+                width: 32px;
+                height: 32px;
+            }
+
+            .header-btn {
+                padding: 0.5rem 0.75rem;
+                font-size: 0.75rem;
+            }
+
+            .emergency-container {
+                padding: 1rem;
+                gap: 1rem;
+            }
+
+            .emergency-btn {
+                height: 200px;
+            }
+
+            .emergency-title {
+                font-size: 2.5rem;
+            }
+
+            .gps-status {
+                padding: 0.75rem;
+                font-size: 0.75rem;
+            }
+
+            .history-stats,
+            .dashboard-stats {
+                grid-template-columns: 1fr;
+                gap: 0.75rem;
+            }
+
+            .stat-card {
+                padding: 1rem;
+            }
+
+            .stat-number {
+                font-size: 2rem;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .user-dialog {
+                margin: 0.5rem;
+                max-width: 100%;
+            }
+
+            .user-dialog-header {
+                padding: 1rem;
+            }
+
+            .user-dialog-header h2 {
+                font-size: 1.125rem;
+            }
+
+            .user-dialog-content {
+                padding: 1rem;
+                max-height: 60vh;
+            }
+
+            .dashboard-tabs {
+                font-size: 0.75rem;
+            }
+
+            .dashboard-tab {
+                padding: 0.75rem 0.5rem;
+            }
+
+            .overview-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .history-item,
+            .dashboard-item {
+                padding: 1rem;
+            }
+
+            .history-item-header,
+            .dashboard-item-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+            }
+
+            .history-item-actions,
+            .dashboard-item-actions {
+                flex-wrap: wrap;
+                gap: 0.5rem;
+            }
+
+            .history-btn,
+            .dashboard-btn {
+                flex: 1 1 auto;
+                min-width: calc(50% - 0.25rem);
+            }
+
+            .report-section {
+                padding: 1rem;
+            }
+
+            .report-textarea {
+                min-height: 120px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .emergency-btn {
+                height: 160px;
+            }
+
+            .emergency-title {
+                font-size: 2rem;
+            }
+
+            .stat-number {
+                font-size: 1.5rem;
+            }
+
+            .history-btn,
+            .dashboard-btn {
+                min-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Login Screen -->
+    <div class="login-screen" id="loginScreen">
+        <div class="login-container">
+            <div class="logo">
+                <svg class="logo-icon" viewBox="0 0 24 24">
+                    <path d="M12 2L4 7v6.09c0 5.05 3.41 9.76 8 10.91 4.59-1.15 8-5.86 8-10.91V7l-8-5zm-1 15.5h2V19h-2v-1.5zm2-3h-2c0-3.25 3-3 3-5 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 2.5-3 2.75-3 5z"/>
+                </svg>
+            </div>
+            <h1>Notruf-App</h1>
+            <p class="subtitle">Sicher und schnell im Einsatz</p>
+            
+            <div class="error-message" id="errorMessage"></div>
+            
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="appNr">App-Nummer</label>
+                    <input 
+                        type="text" 
+                        id="appNr" 
+                        placeholder="z.B. 001"
+                        required
+                    >
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Passwort</label>
+                    <input 
+                        type="password" 
+                        id="password" 
+                        placeholder="••••••••"
+                        required
+                    >
+                </div>
+                
+                <button type="submit" class="btn-login">Anmelden</button>
+            </form>
+            
+            <div class="demo-info">
+                <strong>Demo-Zugang für Tests:</strong><br>
+                Admin: 999 / admin123<br>
+                User: 001 / user123
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App Screen -->
+    <div class="app-screen" id="appScreen">
+        <header class="app-header">
+            <div class="app-title">
+                <div class="app-icon">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M20.01 15.38c-1.23 0-2.42-.2-3.53-.56-.35-.12-.74-.03-1.01.24l-1.57 1.97c-2.83-1.35-5.48-3.9-6.89-6.83l1.95-1.66c.27-.28.35-.67.24-1.02-.37-1.11-.56-2.3-.56-3.53 0-.54-.45-.99-.99-.99H4.19C3.65 3 3 3.24 3 3.99 3 13.28 10.73 21 20.01 21c.71 0 .99-.63.99-1.18v-3.45c0-.54-.45-.99-.99-.99z"/>
+                    </svg>
+                </div>
+                <div class="app-title-text">
+                    <h2>Notruf-App</h2>
+                    <p id="userName">Wird geladen...</p>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button class="header-btn" onclick="showHistory()">Verlauf</button>
+                <button class="header-btn primary" id="dashboardBtn" onclick="showDashboard()" style="display:none;">Dashboard</button>
+                <button class="header-btn" onclick="logout()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="white" style="display: inline-block; vertical-align: middle;">
+                        <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/>
+                    </svg>
+                </button>
+            </div>
+        </header>
+
+        <div class="gps-status" id="gpsStatus">
+            <h3>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3c-.46-4.17-3.77-7.48-7.94-7.94V1h-2v2.06C6.83 3.52 3.52 6.83 3.06 11H1v2h2.06c.46 4.17 3.77 7.48 7.94 7.94V23h2v-2.06c4.17-.46 7.48-3.77 7.94-7.94H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/>
+                </svg>
+                GPS-Standort aktiv
+            </h3>
+            <p id="gpsCoords" class="gps-coords">Standort wird ermittelt...</p>
+            <p id="gpsAccuracy">Genauigkeit: --</p>
+        </div>
+
+        <div class="emergency-container">
+            <div class="emergency-section">
+                <h2 class="emergency-label">Polizei Notruf</h2>
+                <p class="emergency-hint">Gedrückt halten oder klicken zum Auslösen</p>
+                <button class="emergency-btn emergency-btn-polizei" onclick="triggerEmergency('notfall_110')">
+                    <div class="emergency-btn-content">
+                        <div class="emergency-icon">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M20.01 15.38c-1.23 0-2.42-.2-3.53-.56-.35-.12-.74-.03-1.01.24l-1.57 1.97c-2.83-1.35-5.48-3.9-6.89-6.83l1.95-1.66c.27-.28.35-.67.24-1.02-.37-1.11-.56-2.3-.56-3.53 0-.54-.45-.99-.99-.99H4.19C3.65 3 3 3.24 3 3.99 3 13.28 10.73 21 20.01 21c.71 0 .99-.63.99-1.18v-3.45c0-.54-.45-.99-.99-.99z"/>
+                            </svg>
+                        </div>
+                        <div class="emergency-title">110</div>
+                        <div class="emergency-subtitle">Polizei-Notruf auslösen</div>
+                    </div>
+                </button>
+            </div>
+
+            <div class="emergency-section">
+                <h2 class="emergency-label">Leitzentrale</h2>
+                <p class="emergency-hint">Gedrückt halten oder klicken für Unterstützung</p>
+                <button class="emergency-btn emergency-btn-support" onclick="triggerEmergency('unterstützung')">
+                    <div class="emergency-btn-content">
+                        <div class="emergency-icon">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+                            </svg>
+                        </div>
+                        <div class="emergency-title">Unterstützung</div>
+                        <div class="emergency-subtitle">Kollegen benachrichtigen</div>
+                    </div>
+                </button>
+            </div>
+        </div>
+
+        <footer class="app-footer">
+            © 2025 Klaus Calcara Gewaltprävention BW
+        </footer>
+    </div>
+
+    <!-- History Screen -->
+    <div class="history-screen" id="historyScreen">
+        <header class="app-header">
+            <div class="app-title">
+                <div class="logo">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="white">
+                        <path d="M20.01 15.38c-1.23 0-2.42-.2-3.53-.56-.35-.12-.74-.03-1.01.24l-1.57 1.97c-2.83-1.35-5.48-3.9-6.89-6.83l1.95-1.66c.27-.28.35-.67.24-1.02-.37-1.11-.56-2.3-.56-3.53 0-.54-.45-.99-.99-.99H4.19C3.65 3 3 3.24 3 3.99 3 13.28 10.73 21 20.01 21c.71 0 .99-.63.99-1.18v-3.45c0-.54-.45-.99-.99-.99z"/>
+                    </svg>
+                </div>
+                <div class="app-title-text">
+                    <h2>Verlauf</h2>
+                    <p id="historyUserName">Meine Notrufe</p>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button class="header-btn" onclick="backToMain()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
+                        <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+                    </svg>
+                    Zurück
+                </button>
+            </div>
+        </header>
+
+        <div class="history-content">
+            <div class="history-stats">
+                <div class="stat-card">
+                    <div class="stat-number" id="totalEmergencies">0</div>
+                    <div class="stat-label">Gesamt</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="activeEmergencies">0</div>
+                    <div class="stat-label">Aktiv</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="completedEmergencies">0</div>
+                    <div class="stat-label">Abgeschlossen</div>
+                </div>
+            </div>
+
+            <div id="historyList" class="history-list">
+                <div class="loading-message">Lade Notrufe...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dashboard Screen (Admin) -->
+    <div class="dashboard-screen" id="dashboardScreen">
+        <header class="app-header">
+            <div class="app-title">
+                <div class="logo">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="white">
+                        <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/>
+                    </svg>
+                </div>
+                <div class="app-title-text">
+                    <h2>Admin-Dashboard</h2>
+                    <p>Leitzentrale Übersicht</p>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button class="header-btn" onclick="backToMain()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
+                        <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+                    </svg>
+                    Zurück
+                </button>
+            </div>
+        </header>
+
+        <!-- Dashboard Tabs -->
+        <div class="dashboard-tabs">
+            <button class="dashboard-tab active" data-tab="notrufe" onclick="switchDashboardTab('notrufe')">
+                🚨 Notrufe
+            </button>
+            <button class="dashboard-tab" data-tab="uebersicht" onclick="switchDashboardTab('uebersicht')">
+                📊 Übersicht
+            </button>
+            <button class="dashboard-tab" data-tab="teilnehmer" onclick="switchDashboardTab('teilnehmer')">
+                👥 Teilnehmer
+            </button>
+        </div>
+
+        <!-- Tab Content: Notrufe -->
+        <div class="dashboard-tab-content active" id="tab-notrufe">
+            <div class="dashboard-content">
+                <div class="dashboard-stats">
+                    <div class="stat-card">
+                        <div class="stat-number" id="dashTotalEmergencies">0</div>
+                        <div class="stat-label">Gesamt Heute</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="dashActiveEmergencies">0</div>
+                        <div class="stat-label">Aktiv</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="dashPendingEmergencies">0</div>
+                        <div class="stat-label">Ausstehend</div>
+                    </div>
+                </div>
+
+                <div id="dashboardList" class="dashboard-list">
+                    <div class="loading-message">Lade Notrufe...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Content: Übersicht -->
+        <div class="dashboard-tab-content" id="tab-uebersicht">
+            <div class="dashboard-content">
+                <div class="overview-section">
+                    <h3>📅 Monatsstatistik</h3>
+                    <div class="overview-grid">
+                        <div class="overview-card">
+                            <div class="overview-label">Notrufe diesen Monat</div>
+                            <div class="overview-value" id="monthlyTotal">0</div>
+                        </div>
+                        <div class="overview-card">
+                            <div class="overview-label">Polizei-Notrufe (110)</div>
+                            <div class="overview-value" id="monthlyPolice">0</div>
+                        </div>
+                        <div class="overview-card">
+                            <div class="overview-label">Unterstützungsanfragen</div>
+                            <div class="overview-value" id="monthlySupport">0</div>
+                        </div>
+                        <div class="overview-card">
+                            <div class="overview-label">Fehlalarme</div>
+                            <div class="overview-value" id="monthlyFalseAlarms">0</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="overview-section">
+                    <h3>⏱️ Durchschnittliche Bearbeitungszeit</h3>
+                    <div class="overview-card">
+                        <div class="overview-value" id="avgProcessingTime">--</div>
+                        <div class="overview-label">Minuten</div>
+                    </div>
+                </div>
+
+                <div class="overview-section">
+                    <h3>👤 Aktivste Mitarbeiter</h3>
+                    <div id="topUsersList" class="top-users-list">
+                        <div class="loading-message">Lade Statistiken...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Content: Teilnehmer -->
+        <div class="dashboard-tab-content" id="tab-teilnehmer">
+            <div class="dashboard-content">
+                <div class="participants-header">
+                    <h3>👥 Registrierte Teilnehmer</h3>
+                    <button class="btn-add-user" onclick="showAddUserDialog()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
+                            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                        </svg>
+                        Benutzer hinzufügen
+                    </button>
+                </div>
+                <div id="participantsList" class="participants-list">
+                    <div class="loading-message">Lade Teilnehmer...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Report Screen -->
+    <div class="report-screen" id="reportScreen">
+        <header class="app-header">
+            <div class="app-title">
+                <div class="logo">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="white">
+                        <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zM6 20V4h7v5h5v11H6z"/>
+                    </svg>
+                </div>
+                <div class="app-title-text">
+                    <h2>Vorfallbericht</h2>
+                    <p id="reportEmergencyType">Wird geladen...</p>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button class="header-btn" onclick="closeReport()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
+                        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                    </svg>
+                    Schließen
+                </button>
+            </div>
+        </header>
+
+        <div class="report-content" id="reportContent">
+            <div class="loading-message">Lade Bericht...</div>
+        </div>
+    </div>
+
+    <!-- Add User Dialog -->
+    <div class="user-dialog-overlay" id="userDialogOverlay">
+        <div class="user-dialog">
+            <div class="user-dialog-header">
+                <h2>👤 Neuen Mitarbeiter anlegen</h2>
+                <button class="user-dialog-close" onclick="closeUserDialog()">✕</button>
+            </div>
+            
+            <div class="user-dialog-content">
+                <div class="user-photo-placeholder" onclick="document.getElementById('userPhotoInput').click()" style="cursor: pointer;">
+                    <input type="file" id="userPhotoInput" accept="image/*" style="display: none;" onchange="handlePhotoUpload(event)">
+                    <img id="userPhotoPreview" style="display: none; width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+                    <svg id="userPhotoIcon" width="80" height="80" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                    </svg>
+                    <div class="photo-placeholder-text" id="userPhotoText">Profilbild<br><small style="font-size: 0.7rem;">(Klicken zum Hochladen)</small></div>
+                </div>
+
+                <form id="newUserForm" onsubmit="return saveNewUser(event);">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Vorname *</label>
+                            <input type="text" id="formVorname" required placeholder="Max">
+                        </div>
+                        <div class="form-group">
+                            <label>Name *</label>
+                            <input type="text" id="formNachname" required placeholder="Mustermann">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Geschlecht *</label>
+                            <select id="formGeschlecht" required>
+                                <option value="">Bitte wählen...</option>
+                                <option value="männlich">männlich</option>
+                                <option value="weiblich">weiblich</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>App-Nummer * (3-stellig)</label>
+                            <input type="text" id="formAppNr" required placeholder="002" pattern="[0-9]{3}" maxlength="3">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Abteilung / Dienststelle *</label>
+                        <input type="text" id="formAbteilung" required placeholder="Ordnungsamt">
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Telefonnummer</label>
+                            <input type="tel" id="formTelefon" placeholder="0711 123456">
+                        </div>
+                        <div class="form-group">
+                            <label>Mobilnummer</label>
+                            <input type="tel" id="formMobil" placeholder="0171 1234567">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Passwort * (min. 6 Zeichen)</label>
+                        <input type="password" id="formPassword" required placeholder="••••••" minlength="6">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Rolle *</label>
+                        <select id="formRolle" required>
+                            <option value="user">Normaler User</option>
+                            <option value="admin">Administrator</option>
+                            <option value="superuser">Superuser (nur für Superuser sichtbar)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Notizen (optional)</label>
+                        <textarea id="formNotizen" rows="3" placeholder="Zusätzliche Informationen..."></textarea>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn-secondary" onclick="closeUserDialog()">Abbrechen</button>
+                        <button type="submit" class="btn-primary">💾 Speichern</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Countdown Overlay -->
+    <div class="countdown-overlay" id="countdownOverlay">
+        <div class="countdown-content">
+            <div class="countdown-title" id="countdownTitle">NOTRUF WIRD AUSGELÖST</div>
+            <div class="countdown-number" id="countdownNumber">3</div>
+            <div class="countdown-message">Notruf wird automatisch gesendet</div>
+            <button class="btn-cancel-countdown" onclick="cancelCountdown()">
+                ✕ ABBRECHEN
+            </button>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading" id="loading">
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <p>Notruf wird ausgelöst...</p>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getFirestore, collection, addDoc, query, where, getDocs, serverTimestamp, onSnapshot, orderBy, limit, doc, setDoc, updateDoc, deleteDoc, getDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+        import { getMessaging, getToken, onMessage } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging.js';
+
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyD1JAWOuqcmZ1NQhjU_0RiN-6GPoXd6J34",
+            authDomain: "notruf-app-6f7ff.firebaseapp.com",
+            projectId: "notruf-app-6f7ff",
+            storageBucket: "notruf-app-6f7ff.firebasestorage.app",
+            messagingSenderId: "844877130066",
+            appId: "1:844877130066:web:38aae57e3ec31b0f0b728b"
+        };
+
+        const VAPID_KEY = "BBVtcQv-906jUe8vyRVb3sr6TJGPn68fzyg0_nnrSZQybtU8elevAReYfNVOWuqCpnhWCtr4vlYZ-uFlh30JfdM";
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        
+        // Global variables
+        let currentUser = null;
+        let currentPosition = null;
+        let messaging = null;
+        let swRegistration = null; // Service Worker Registration
+
+        // Make functions global
+        window.showHistory = showHistory;
+        window.showDashboard = showDashboard;
+        window.logout = logout;
+        window.triggerEmergency = triggerEmergency;
+        window.cancelCountdown = cancelCountdown;
+        window.backToMain = backToMain;
+        window.markAsFalseAlarm = markAsFalseAlarm;
+        window.fillReport = fillReport;
+        window.viewReport = viewReport;
+        window.switchDashboardTab = switchDashboardTab;
+        window.takeEmergency = takeEmergency;
+        window.completeEmergency = completeEmergency;
+        window.showAddUserDialog = showAddUserDialog;
+        window.editParticipant = editParticipant;
+        window.deleteParticipant = deleteParticipant;
+        window.closeReport = closeReport;
+        window.saveEmployeeReport = saveEmployeeReport;
+        window.closeUserDialog = closeUserDialog;
+        window.saveNewUser = saveNewUser;
+        window.handlePhotoUpload = handlePhotoUpload;
+
+        // Countdown variables
+        let countdownInterval = null;
+        let countdownSeconds = 3;
+        let emergencyType = null;
+
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Check if already logged in
+            const savedUser = localStorage.getItem('notrufUser');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+                showAppScreen();
+            }
+
+            // Setup login form
+            document.getElementById('loginForm').addEventListener('submit', handleLogin);
+
+            // Initialize GPS
+            initGPS();
+
+            // Initialize push notifications
+            await initPushNotifications();
+        });
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            
+            const appNr = document.getElementById('appNr').value.trim();
+            const password = document.getElementById('password').value;
+            
+            showError('');
+
+            try {
+                // Query users collection
+                const usersRef = collection(db, 'users');
+                const q = query(usersRef, where('app_nr', '==', appNr));
+                const querySnapshot = await getDocs(q);
+
+                if (querySnapshot.empty) {
+                    // User doesn't exist - create demo users
+                    if (appNr === '999' && password === 'admin123') {
+                        currentUser = {
+                            id: 'superuser-klaus',
+                            app_nr: '999',
+                            rolle: 'superuser',
+                            vorname: 'Klaus',
+                            nachname: 'Calcara',
+                            abteilung: 'Leitzentrale'
+                        };
+                    } else if (appNr === '001' && password === 'user123') {
+                        currentUser = {
+                            id: 'user-demo',
+                            app_nr: '001',
+                            rolle: 'user',
+                            vorname: 'Lisa',
+                            nachname: 'Mueller',
+                            abteilung: 'Außendienst'
+                        };
+                    } else {
+                        showError('Ungültige App-Nummer oder Passwort');
+                        return;
+                    }
+                } else {
+                    // User exists - simple password check (in production, use proper auth)
+                    const userData = querySnapshot.docs[0].data();
+                    currentUser = {
+                        id: querySnapshot.docs[0].id,
+                        ...userData
+                    };
+                }
+
+                // Save to localStorage
+                localStorage.setItem('notrufUser', JSON.stringify(currentUser));
+                
+                // Show app screen
+                showAppScreen();
+
+            } catch (error) {
+                console.error('Login error:', error);
+                showError('Fehler beim Anmelden. Bitte versuchen Sie es erneut.');
+            }
+        }
+
+        function showAppScreen() {
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('appScreen').classList.add('active');
+            
+            // Update user name
+            const userName = `${currentUser.vorname} ${currentUser.nachname}`;
+            const userDept = currentUser.abteilung;
+            document.getElementById('userName').textContent = `${userName} • ${userDept}`;
+
+            // Show dashboard button for admin
+            if (currentUser.rolle === 'admin' || currentUser.rolle === 'leitzentrale') {
+                document.getElementById('dashboardBtn').style.display = 'inline-block';
+            }
+
+            // Setup push notifications with FCM
+            setupFCMNotifications();
+        }
+
+        async function setupFCMNotifications() {
+            console.log('Setting up FCM notifications...');
+            
+            if (!('Notification' in window)) {
+                console.log('Browser unterstützt keine Notifications');
+                alert('⚠️ Ihr Browser unterstützt keine Push-Benachrichtigungen.\n\nSie werden nicht bei Notrufen benachrichtigt!');
+                return;
+            }
+
+            try {
+                // Register service worker first (if not already registered)
+                if (!swRegistration) {
+                    swRegistration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+                    console.log('Service Worker registered:', swRegistration);
+                }
+
+                // Request notification permission
+                const permission = await Notification.requestPermission();
+                
+                if (permission !== 'granted') {
+                    console.log('Notification permission denied');
+                    alert('⚠️ Benachrichtigungen wurden blockiert.\n\nBitte erlauben Sie Benachrichtigungen in den Browser-Einstellungen, damit Sie bei Notrufen benachrichtigt werden!');
+                    return;
+                }
+
+                console.log('Notification permission granted');
+
+                // Get FCM token with service worker registration
+                const messaging = getMessaging(app);
+                const token = await getToken(messaging, {
+                    vapidKey: VAPID_KEY,
+                    serviceWorkerRegistration: swRegistration
+                });
+
+                console.log('FCM Token erhalten:', token);
+
+                // Save token to Firestore (with user ID)
+                await saveFCMToken(token);
+
+                // Show success notification (using Service Worker for mobile compatibility)
+                if (swRegistration) {
+                    await swRegistration.showNotification('✅ Notruf-App aktiviert!', {
+                        body: 'Sie werden jetzt bei allen Notrufen benachrichtigt - auch bei geschlossener App!',
+                        icon: '/icon-192.png',
+                        requireInteraction: false
+                    });
+                }
+
+                // Listen for foreground messages (when app is open)
+                onMessage(messaging, (payload) => {
+                    console.log('Foreground message received:', payload);
+                    
+                    // Extract emergency data
+                    const emergency = payload.data;
+                    emergency.typ = emergency.typ || 'notfall_110';
+                    emergency.user_name = emergency.user_name || 'Unbekannt';
+                    emergency.user_dienststelle = emergency.user_dienststelle || '';
+                    
+                    // Show notification
+                    showEmergencyNotification(emergency);
+                });
+
+            } catch (error) {
+                console.error('FCM Setup error:', error);
+                alert('⚠️ Fehler beim Einrichten der Benachrichtigungen:\n\n' + error.message + '\n\nBitte laden Sie die Seite neu.');
+            }
+        }
+
+        async function saveFCMToken(token) {
+            try {
+                // Save token with user ID to Firestore
+                const tokenRef = doc(db, 'fcm_tokens', currentUser.id);
+                await setDoc(tokenRef, {
+                    token: token,
+                    user_id: currentUser.id,
+                    user_name: `${currentUser.vorname} ${currentUser.nachname}`,
+                    user_rolle: currentUser.rolle,
+                    updated_at: serverTimestamp()
+                }, { merge: true });
+
+                console.log('FCM Token saved to Firestore');
+            } catch (error) {
+                console.error('Error saving FCM token:', error);
+                throw error;
+            }
+        }
+
+        function showEmergencyNotification(emergency) {
+            console.log('New emergency detected:', emergency);
+            
+            const isPolice = emergency.typ === 'notfall_110';
+            const title = isPolice ? '🚨 POLIZEI-NOTRUF!' : '📢 UNTERSTÜTZUNG ANGEFORDERT!';
+            const body = `${emergency.user_name} (${emergency.user_dienststelle})\nbenötigt ${isPolice ? 'dringend Hilfe!' : 'Unterstützung!'}`;
+            
+            // Play loud alarm sound
+            playEmergencyAlarm(isPolice);
+            
+            // Vibrate (INTENSE pattern - repeated)
+            if ('vibrate' in navigator) {
+                // Long intensive pattern: vibrate-pause repeated 10 times
+                navigator.vibrate([800, 200, 800, 200, 800, 200, 800, 200, 800, 200, 800, 200, 800, 200, 800, 200, 800, 200, 800]);
+            }
+            
+            // Show browser notification (using Service Worker for mobile compatibility)
+            if ('Notification' in window && Notification.permission === 'granted' && swRegistration) {
+                swRegistration.showNotification(title, {
+                    body: body,
+                    icon: '/icon-192.png',
+                    badge: '/icon-192.png',
+                    requireInteraction: true,
+                    vibrate: [500, 200, 500, 200, 500],
+                    tag: 'emergency-' + Date.now(),
+                    data: { emergency }
+                });
+            }
+            
+            // Show in-app alert (falls Browser-Notification nicht geht)
+            showInAppAlert(emergency, isPolice);
+        }
+
+        function playEmergencyAlarm(isPolice) {
+            // LOUD alarm sound - repeated 10 times!
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                
+                // Play 10 times for better attention
+                for (let i = 0; i < 10; i++) {
+                    setTimeout(() => {
+                        const oscillator = audioContext.createOscillator();
+                        const gainNode = audioContext.createGain();
+                        
+                        oscillator.connect(gainNode);
+                        gainNode.connect(audioContext.destination);
+                        
+                        // Police: High pitch alarm, Support: Lower pitch
+                        const frequency = isPolice ? 1200 : 800;
+                        oscillator.frequency.value = frequency;
+                        oscillator.type = 'square'; // Harsher, more noticeable sound
+                        
+                        // MUCH LOUDER: 0.8 instead of 0.5
+                        gainNode.gain.setValueAtTime(0.8, audioContext.currentTime);
+                        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+                        
+                        oscillator.start(audioContext.currentTime);
+                        oscillator.stop(audioContext.currentTime + 0.3);
+                    }, i * 400); // Faster repetition
+                }
+            } catch (e) {
+                console.log('Audio not supported:', e);
+            }
+        }
+
+        function showInAppAlert(emergency, isPolice) {
+            const color = isPolice ? '#ef4444' : '#f97316';
+            const title = isPolice ? '🚨 POLIZEI-NOTRUF!' : '📢 UNTERSTÜTZUNG!';
+            
+            const alertDiv = document.createElement('div');
+            alertDiv.style.cssText = `
+                position: fixed;
+                top: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: ${color};
+                color: white;
+                padding: 1.5rem 2rem;
+                border-radius: 1rem;
+                box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+                z-index: 10000;
+                max-width: 90%;
+                text-align: center;
+                animation: slideDown 0.3s ease-out;
+                font-weight: bold;
+                font-size: 1.1rem;
+            `;
+            
+            alertDiv.innerHTML = `
+                <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">${title}</div>
+                <div style="font-size: 1rem; opacity: 0.95;">
+                    ${emergency.user_name}<br>
+                    <small>${emergency.user_dienststelle}</small>
+                </div>
+            `;
+            
+            document.body.appendChild(alertDiv);
+            
+            // Auto-remove after 10 seconds
+            setTimeout(() => {
+                alertDiv.style.animation = 'slideUp 0.3s ease-in';
+                setTimeout(() => alertDiv.remove(), 300);
+            }, 10000);
+            
+            // Click to dismiss
+            alertDiv.onclick = () => {
+                alertDiv.style.animation = 'slideUp 0.3s ease-in';
+                setTimeout(() => alertDiv.remove(), 300);
+            };
+        }
+
+        function showError(message) {
+            const errorEl = document.getElementById('errorMessage');
+            if (message) {
+                errorEl.textContent = message;
+                errorEl.classList.add('show');
+            } else {
+                errorEl.classList.remove('show');
+            }
+        }
+
+        function initGPS() {
+            if (!navigator.geolocation) {
+                document.getElementById('gpsCoords').textContent = 'GPS nicht verfügbar';
+                document.getElementById('gpsStatus').style.background = 'rgba(239, 68, 68, 0.15)';
+                document.getElementById('gpsStatus').style.borderColor = 'rgba(239, 68, 68, 0.3)';
+                return;
+            }
+
+            // First try getCurrentPosition to trigger permission prompt
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    currentPosition = position;
+                    const lat = position.coords.latitude.toFixed(6);
+                    const lng = position.coords.longitude.toFixed(6);
+                    const accuracy = Math.round(position.coords.accuracy);
+                    
+                    document.getElementById('gpsCoords').textContent = `${lat}, ${lng}`;
+                    document.getElementById('gpsAccuracy').textContent = `Genauigkeit: ±${accuracy}m`;
+                    
+                    // Now start watching
+                    navigator.geolocation.watchPosition(
+                        (pos) => {
+                            currentPosition = pos;
+                            const lat = pos.coords.latitude.toFixed(6);
+                            const lng = pos.coords.longitude.toFixed(6);
+                            const accuracy = Math.round(pos.coords.accuracy);
+                            
+                            document.getElementById('gpsCoords').textContent = `${lat}, ${lng}`;
+                            document.getElementById('gpsAccuracy').textContent = `Genauigkeit: ±${accuracy}m`;
+                        },
+                        (error) => {
+                            console.error('GPS watch error:', error);
+                        },
+                        {
+                            enableHighAccuracy: true,
+                            timeout: 10000,
+                            maximumAge: 0
+                        }
+                    );
+                },
+                (error) => {
+                    console.error('GPS error:', error);
+                    let errorMsg = 'GPS-Fehler';
+                    
+                    switch(error.code) {
+                        case error.PERMISSION_DENIED:
+                            errorMsg = 'GPS-Berechtigung verweigert';
+                            break;
+                        case error.POSITION_UNAVAILABLE:
+                            errorMsg = 'GPS-Position nicht verfügbar';
+                            break;
+                        case error.TIMEOUT:
+                            errorMsg = 'GPS-Timeout';
+                            break;
+                    }
+                    
+                    document.getElementById('gpsCoords').textContent = errorMsg + ' (Notruf trotzdem möglich!)';
+                    document.getElementById('gpsAccuracy').textContent = 'Standort wird nicht übermittelt';
+                    document.getElementById('gpsStatus').style.background = 'rgba(251, 191, 36, 0.15)';
+                    document.getElementById('gpsStatus').style.borderColor = 'rgba(251, 191, 36, 0.3)';
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 0
+                }
+            );
+        }
+
+        async function initPushNotifications() {
+            if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+                console.log('Push notifications not supported');
+                return;
+            }
+
+            try {
+                // Register service worker and save globally
+                swRegistration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+                console.log('Service Worker registered in initPushNotifications');
+            } catch (error) {
+                console.error('Service Worker registration error:', error);
+            }
+        }
+
+        function showNotification(payload) {
+            const { title, body } = payload.notification || {};
+            
+            // Play alarm sound
+            const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBTGH0O/EgSgGHmm98eKDKggZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBTGH0O/EgSgGHmm98eKDKggZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBTGH0O/EgSgGHmm98eKDKggZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBTGH0O/EgSgGHmm98eKDKggZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBTGH0O/EgSgGHmm98eKDKggZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBTGH0O/EgSgGHmm98eKDKggZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBTGH0O/EgSgGHmm98eKDKg==');
+            audio.play().catch(e => console.log('Audio play failed:', e));
+
+            // Show browser notification (using Service Worker for mobile compatibility)
+            if (Notification.permission === 'granted' && swRegistration) {
+                swRegistration.showNotification(title || '🚨 NOTRUF', {
+                    body: body || 'Ein Notruf wurde ausgelöst!',
+                    icon: '/icon-192.png',
+                    badge: '/icon-192.png',
+                    vibrate: [200, 100, 200],
+                    requireInteraction: true
+                });
+            }
+        }
+
+        async function triggerEmergency(typ) {
+            // Allow emergency even without GPS!
+            if (!currentPosition) {
+                console.warn('No GPS available, but allowing emergency');
+            }
+
+            emergencyType = typ;
+            
+            // Setup countdown overlay
+            const overlay = document.getElementById('countdownOverlay');
+            const title = document.getElementById('countdownTitle');
+            const number = document.getElementById('countdownNumber');
+            
+            if (typ === 'notfall_110') {
+                title.textContent = '🚨 POLIZEI-NOTRUF WIRD AUSGELÖST';
+                overlay.classList.remove('support');
+            } else {
+                title.textContent = '📢 UNTERSTÜTZUNG WIRD ANGEFORDERT';
+                overlay.classList.add('support');
+            }
+            
+            // Show overlay
+            overlay.classList.add('show');
+            
+            // Start countdown
+            countdownSeconds = 3;
+            number.textContent = countdownSeconds;
+            
+            // Vibrate if supported
+            if ('vibrate' in navigator) {
+                navigator.vibrate([200, 100, 200]);
+            }
+            
+            // Play sound
+            playAlertSound();
+            
+            countdownInterval = setInterval(() => {
+                countdownSeconds--;
+                
+                if (countdownSeconds > 0) {
+                    number.textContent = countdownSeconds;
+                    number.style.animation = 'none';
+                    setTimeout(() => {
+                        number.style.animation = 'countPulse 1s ease-in-out';
+                    }, 10);
+                    
+                    // Vibrate
+                    if ('vibrate' in navigator) {
+                        navigator.vibrate(200);
+                    }
+                    
+                    playAlertSound();
+                } else {
+                    clearInterval(countdownInterval);
+                    overlay.classList.remove('show');
+                    executeEmergency(emergencyType);
+                }
+            }, 1000);
+        }
+
+        function cancelCountdown() {
+            clearInterval(countdownInterval);
+            document.getElementById('countdownOverlay').classList.remove('show');
+            emergencyType = null;
+        }
+
+        function playAlertSound() {
+            // Simple beep sound
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.value = 800;
+                oscillator.type = 'sine';
+                
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.2);
+            } catch (e) {
+                console.log('Audio not supported:', e);
+            }
+        }
+
+        async function executeEmergency(typ) {
+            document.getElementById('loading').classList.add('show');
+
+            try {
+                const emergencyData = {
+                    typ: typ,
+                    user_id: currentUser.id,
+                    user_name: `${currentUser.vorname} ${currentUser.nachname}`,
+                    user_dienststelle: currentUser.abteilung,
+                    gps_latitude: currentPosition ? currentPosition.coords.latitude : 0,
+                    gps_longitude: currentPosition ? currentPosition.coords.longitude : 0,
+                    gps_accuracy: currentPosition ? currentPosition.coords.accuracy : null,
+                    gps_available: !!currentPosition,
+                    timestamp: serverTimestamp(),
+                    status: 'active'
+                };
+
+                // Save to Firestore
+                const docRef = await addDoc(collection(db, 'emergency_calls'), emergencyData);
+                console.log('Emergency saved:', docRef.id);
+
+                // Success
+                setTimeout(() => {
+                    document.getElementById('loading').classList.remove('show');
+                    
+                    // Show success message
+                    let message = typ === 'notfall_110' 
+                        ? '✅ POLIZEI-NOTRUF AUSGELÖST!\n\nIhre Kollegen wurden benachrichtigt.' 
+                        : '✅ UNTERSTÜTZUNG ANGEFORDERT!\n\nIhre Kollegen wurden benachrichtigt.';
+                    
+                    if (!currentPosition) {
+                        message += '\n\n⚠️ Hinweis: GPS-Standort war nicht verfügbar.';
+                    } else {
+                        message += '\nStandort wurde übermittelt.';
+                    }
+                    
+                    alert(message);
+                }, 1500);
+
+            } catch (error) {
+                console.error('Error triggering emergency:', error);
+                document.getElementById('loading').classList.remove('show');
+                alert('Fehler beim Auslösen des Notrufs. Bitte erneut versuchen.');
+            }
+        }
+
+        async function showHistory() {
+            // Hide app screen, show history screen
+            document.getElementById('appScreen').classList.remove('active');
+            document.getElementById('historyScreen').classList.add('active');
+            
+            // Load emergencies
+            await loadHistoryEmergencies();
+        }
+
+        function backToMain() {
+            document.getElementById('historyScreen').classList.remove('active');
+            document.getElementById('appScreen').classList.add('active');
+        }
+
+        async function loadHistoryEmergencies() {
+            const listContainer = document.getElementById('historyList');
+            listContainer.innerHTML = '<div class="loading-message">Lade Notrufe...</div>';
+
+            try {
+                // Get all emergencies for this user
+                const emergencyRef = collection(db, 'emergency_calls');
+                const q = query(
+                    emergencyRef,
+                    where('user_id', '==', currentUser.id),
+                    orderBy('timestamp', 'desc')
+                );
+                
+                const querySnapshot = await getDocs(q);
+                
+                if (querySnapshot.empty) {
+                    listContainer.innerHTML = `
+                        <div class="empty-message">
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M19 13H13V19H11V13H5V11H11V5H13V11H19V13Z"/>
+                            </svg>
+                            <p style="font-size: 1.125rem; margin-bottom: 0.5rem;">Keine Notrufe vorhanden</p>
+                            <p style="font-size: 0.875rem;">Wenn Sie einen Notruf auslösen, erscheint er hier.</p>
+                        </div>
+                    `;
+                    updateHistoryStats([], [], [], []);
+                    return;
+                }
+
+                const emergencies = [];
+                querySnapshot.forEach(doc => {
+                    emergencies.push({ id: doc.id, ...doc.data() });
+                });
+
+                // Count by status
+                const active = emergencies.filter(e => e.status === 'active');
+                const inProgress = emergencies.filter(e => e.status === 'in_progress' || e.status === 'waiting_employee' || e.status === 'waiting_admin');
+                const completed = emergencies.filter(e => e.status === 'completed' || e.status === 'false_alarm');
+
+                updateHistoryStats(emergencies, active, inProgress, completed);
+
+                // Render list
+                listContainer.innerHTML = '';
+                emergencies.forEach(emergency => {
+                    const item = createHistoryItem(emergency);
+                    listContainer.appendChild(item);
+                });
+
+            } catch (error) {
+                console.error('Error loading history:', error);
+                listContainer.innerHTML = `
+                    <div class="empty-message">
+                        <p style="color: #ef4444;">❌ Fehler beim Laden der Notrufe</p>
+                        <p style="font-size: 0.875rem;">${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        function updateHistoryStats(all, active, inProgress, completed) {
+            document.getElementById('totalEmergencies').textContent = all.length;
+            document.getElementById('activeEmergencies').textContent = active.length + inProgress.length;
+            document.getElementById('completedEmergencies').textContent = completed.length;
+        }
+
+        function createHistoryItem(emergency) {
+            const div = document.createElement('div');
+            div.className = 'history-item';
+            
+            // Add red dot if report not filled
+            if (emergency.status === 'active' || emergency.status === 'waiting_employee') {
+                div.classList.add('has-red-dot');
+            }
+
+            const isPolice = emergency.typ === 'notfall_110';
+            const typeIcon = isPolice ? '🚔' : '👥';
+            const typeText = isPolice ? 'Polizei-Notruf' : 'Unterstützung';
+            const typeClass = isPolice ? 'polizei' : 'support';
+
+            // Format timestamp
+            let timestamp = 'Unbekannt';
+            if (emergency.timestamp && emergency.timestamp.toDate) {
+                const date = emergency.timestamp.toDate();
+                timestamp = date.toLocaleString('de-DE', { 
+                    day: '2-digit', 
+                    month: '2-digit', 
+                    year: 'numeric',
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                });
+            }
+
+            // Status badge
+            let statusBadge = '';
+            let statusText = '';
+            switch(emergency.status) {
+                case 'active':
+                    statusBadge = 'status-active';
+                    statusText = 'Aktiv';
+                    break;
+                case 'in_progress':
+                    statusBadge = 'status-in-progress';
+                    statusText = 'In Bearbeitung';
+                    break;
+                case 'waiting_employee':
+                    statusBadge = 'status-waiting-employee';
+                    statusText = 'Warten auf MA';
+                    break;
+                case 'waiting_admin':
+                    statusBadge = 'status-waiting-admin';
+                    statusText = 'Warten auf Admin';
+                    break;
+                case 'completed':
+                    statusBadge = 'status-completed';
+                    statusText = 'Abgeschlossen';
+                    break;
+                case 'false_alarm':
+                    statusBadge = 'status-false-alarm';
+                    statusText = '⚠️ Fehlalarm';
+                    break;
+                default:
+                    statusBadge = 'status-active';
+                    statusText = emergency.status || 'Unbekannt';
+            }
+
+            // GPS link
+            const hasGPS = emergency.gps_available !== false && emergency.gps_latitude && emergency.gps_longitude;
+            const gpsLink = hasGPS 
+                ? `https://www.google.com/maps?q=${emergency.gps_latitude},${emergency.gps_longitude}`
+                : null;
+
+            div.innerHTML = `
+                <div class="history-item-header">
+                    <div class="history-item-type ${typeClass}">
+                        ${typeIcon} ${typeText}
+                    </div>
+                    <div class="history-status-badge ${statusBadge}">
+                        ${statusText}
+                    </div>
+                </div>
+                <div class="history-item-details">
+                    <div class="history-item-detail">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/>
+                        </svg>
+                        ${timestamp}
+                    </div>
+                    ${hasGPS ? `
+                        <div class="history-item-detail">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                            </svg>
+                            GPS: ${emergency.gps_latitude.toFixed(5)}, ${emergency.gps_longitude.toFixed(5)} (±${Math.round(emergency.gps_accuracy)}m)
+                        </div>
+                    ` : `
+                        <div class="history-item-detail" style="color: rgba(239, 68, 68, 0.8);">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                            </svg>
+                            ⚠️ Kein GPS verfügbar
+                        </div>
+                    `}
+                </div>
+                <div class="history-item-actions">
+                    ${hasGPS ? `
+                        <button class="history-btn history-btn-secondary" onclick="window.open('${gpsLink}', '_blank')">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                            </svg>
+                            Google Maps
+                        </button>
+                    ` : ''}
+                    ${emergency.status === 'active' ? `
+                        <button class="history-btn history-btn-primary" onclick="fillReport('${emergency.id}')">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                            </svg>
+                            Bericht ausfüllen
+                        </button>
+                        <button class="history-btn history-btn-danger" onclick="markAsFalseAlarm('${emergency.id}')">
+                            ⚠️ Fehlalarm
+                        </button>
+                    ` : emergency.status === 'waiting_admin' || emergency.status === 'completed' ? `
+                        <button class="history-btn history-btn-secondary" onclick="viewReport('${emergency.id}')">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+                            </svg>
+                            Bericht ansehen
+                        </button>
+                    ` : ''}
+                </div>
+            `;
+
+            return div;
+        }
+
+        async function markAsFalseAlarm(emergencyId) {
+            const reasons = [
+                'Versehentlich ausgelöst',
+                'Testlauf',
+                'Sonstiges'
+            ];
+
+            const reasonText = reasons.join('\n');
+            const reason = prompt(`⚠️ FEHLALARM MARKIEREN\n\nGrund für Fehlalarm?\n\n${reasonText}\n\nBitte Grund eingeben:`);
+
+            if (!reason || reason.trim() === '') {
+                return;
+            }
+
+            try {
+                const emergencyRef = doc(db, 'emergency_calls', emergencyId);
+                await updateDoc(emergencyRef, {
+                    status: 'false_alarm',
+                    false_alarm_reason: reason.trim(),
+                    false_alarm_timestamp: serverTimestamp()
+                });
+
+                alert('✅ Als Fehlalarm markiert');
+                await loadHistoryEmergencies();
+
+            } catch (error) {
+                console.error('Error marking as false alarm:', error);
+                alert('❌ Fehler beim Markieren: ' + error.message);
+            }
+        }
+
+        function fillReport(emergencyId) {
+            openReportScreen(emergencyId, 'employee');
+        }
+
+        function viewReport(emergencyId) {
+            openReportScreen(emergencyId, 'view');
+        }
+
+        let currentReportId = null;
+        let currentReportMode = null;
+
+        async function openReportScreen(emergencyId, mode) {
+            currentReportId = emergencyId;
+            currentReportMode = mode;
+
+            // Hide all other screens
+            document.getElementById('appScreen').classList.remove('active');
+            document.getElementById('historyScreen').classList.remove('active');
+            document.getElementById('dashboardScreen').classList.remove('active');
+            document.getElementById('reportScreen').classList.add('active');
+
+            // Load report
+            await loadReport(emergencyId, mode);
+        }
+
+        function closeReport() {
+            document.getElementById('reportScreen').classList.remove('active');
+            
+            // Return to previous screen
+            if (currentUser.rolle === 'admin' || currentUser.rolle === 'leitzentrale') {
+                document.getElementById('dashboardScreen').classList.add('active');
+            } else {
+                document.getElementById('historyScreen').classList.add('active');
+            }
+            
+            currentReportId = null;
+            currentReportMode = null;
+        }
+
+        async function loadReport(emergencyId, mode) {
+            const contentDiv = document.getElementById('reportContent');
+            contentDiv.innerHTML = '<div class="loading-message">Lade Bericht...</div>';
+
+            try {
+                // Get emergency data
+                const emergencyRef = doc(db, 'emergency_calls', emergencyId);
+                const emergencySnap = await getDoc(emergencyRef);
+
+                if (!emergencySnap.exists()) {
+                    contentDiv.innerHTML = '<div class="empty-message">❌ Notruf nicht gefunden</div>';
+                    return;
+                }
+
+                const emergency = emergencySnap.data();
+                const isPolice = emergency.typ === 'notfall_110';
+                const typeText = isPolice ? 'Polizei-Notruf (110)' : 'Unterstützungsanfrage';
+
+                document.getElementById('reportEmergencyType').textContent = typeText;
+
+                // Render report based on mode
+                if (mode === 'employee') {
+                    renderEmployeeReport(emergency, emergencyId);
+                } else if (mode === 'view') {
+                    renderViewReport(emergency);
+                }
+
+            } catch (error) {
+                console.error('Error loading report:', error);
+                contentDiv.innerHTML = `<div class="empty-message" style="color: #ef4444;">❌ Fehler: ${error.message}</div>`;
+            }
+        }
+
+        function renderEmployeeReport(emergency, emergencyId) {
+            const contentDiv = document.getElementById('reportContent');
+            
+            const canEdit = emergency.status === 'active' || emergency.status === 'waiting_employee';
+            const employeeReport = emergency.employee_report || '';
+
+            contentDiv.innerHTML = `
+                <div class="report-info-box">
+                    📝 Bitte beschreiben Sie den Vorfall. Sie haben 24 Stunden Zeit. Nach Übergabe an Admin ist der Bericht nicht mehr bearbeitbar.
+                </div>
+
+                <div class="report-section">
+                    <div class="report-section-header">
+                        <div class="report-section-title">1. VORFALLBESCHREIBUNG (Mitarbeiter)</div>
+                        <div class="report-section-badge badge-employee">Mitarbeiter</div>
+                    </div>
+                    <textarea 
+                        class="report-textarea" 
+                        id="employeeReportText"
+                        placeholder="Beschreiben Sie bitte:\n- Was ist passiert?\n- Wann und wo?\n- Wer war beteiligt?\n- Wie haben Sie reagiert?\n- Was war das Ergebnis?"
+                        ${canEdit ? '' : 'disabled'}
+                    >${employeeReport}</textarea>
+                </div>
+
+                <div class="report-actions">
+                    ${canEdit ? `
+                        <button class="report-btn report-btn-secondary" onclick="saveEmployeeReport(false)">
+                            💾 Speichern
+                        </button>
+                        <button class="report-btn report-btn-primary" onclick="saveEmployeeReport(true)">
+                            ✅ An Admin übergeben
+                        </button>
+                    ` : `
+                        <div style="color: rgba(255,255,255,0.7); padding: 0.5rem;">
+                            🔒 Bericht wurde an Admin übergeben und kann nicht mehr bearbeitet werden.
+                        </div>
+                    `}
+                    <button class="report-btn report-btn-secondary" onclick="closeReport()">
+                        ✕ Schließen
+                    </button>
+                </div>
+            `;
+        }
+
+        function renderViewReport(emergency) {
+            const contentDiv = document.getElementById('reportContent');
+            
+            const employeeReport = emergency.employee_report || 'Noch nicht ausgefüllt';
+            const adminSummary = emergency.admin_summary || 'Noch nicht ausgefüllt';
+            const adminActions = emergency.admin_actions || 'Noch nicht ausgefüllt';
+            const adminResult = emergency.admin_result || 'Noch nicht ausgefüllt';
+
+            contentDiv.innerHTML = `
+                <div class="report-section readonly">
+                    <div class="report-section-header">
+                        <div class="report-section-title">1. VORFALLBESCHREIBUNG (Mitarbeiter)</div>
+                        <div class="report-section-badge badge-employee">Mitarbeiter</div>
+                    </div>
+                    <div style="color: rgba(255,255,255,0.9); line-height: 1.6; white-space: pre-wrap;">${employeeReport}</div>
+                </div>
+
+                <div class="report-section readonly">
+                    <div class="report-section-header">
+                        <div class="report-section-title">2. ZUSAMMENFASSUNG (Admin/Leitzentrale)</div>
+                        <div class="report-section-badge badge-admin">Admin</div>
+                    </div>
+                    <div style="color: rgba(255,255,255,0.9); line-height: 1.6; white-space: pre-wrap;">${adminSummary}</div>
+                </div>
+
+                <div class="report-section readonly">
+                    <div class="report-section-header">
+                        <div class="report-section-title">3. DURCHGEFÜHRTE MASSNAHMEN (Admin)</div>
+                        <div class="report-section-badge badge-admin">Admin</div>
+                    </div>
+                    <div style="color: rgba(255,255,255,0.9); line-height: 1.6; white-space: pre-wrap;">${adminActions}</div>
+                </div>
+
+                <div class="report-section readonly">
+                    <div class="report-section-header">
+                        <div class="report-section-title">4. ERGEBNIS UND ABSCHLUSS (Admin)</div>
+                        <div class="report-section-badge badge-admin">Admin</div>
+                    </div>
+                    <div style="color: rgba(255,255,255,0.9); line-height: 1.6; white-space: pre-wrap;">${adminResult}</div>
+                </div>
+
+                <div class="report-actions">
+                    <button class="report-btn report-btn-secondary" onclick="closeReport()">
+                        ✕ Schließen
+                    </button>
+                </div>
+            `;
+        }
+
+        async function saveEmployeeReport(submitToAdmin) {
+            const reportText = document.getElementById('employeeReportText').value.trim();
+
+            if (!reportText) {
+                alert('⚠️ Bitte füllen Sie die Vorfallbeschreibung aus!');
+                return;
+            }
+
+            if (submitToAdmin && !confirm('Bericht an Admin übergeben?\n\nSie können ihn danach nicht mehr bearbeiten!')) {
+                return;
+            }
+
+            try {
+                const emergencyRef = doc(db, 'emergency_calls', currentReportId);
+                const updateData = {
+                    employee_report: reportText,
+                    employee_report_updated: serverTimestamp()
+                };
+
+                if (submitToAdmin) {
+                    updateData.status = 'waiting_admin';
+                    updateData.submitted_to_admin_at = serverTimestamp();
+                }
+
+                await updateDoc(emergencyRef, updateData);
+
+                if (submitToAdmin) {
+                    alert('✅ Bericht an Admin übergeben!');
+                    closeReport();
+                } else {
+                    alert('✅ Bericht gespeichert!');
+                }
+
+            } catch (error) {
+                console.error('Error saving employee report:', error);
+                alert('❌ Fehler beim Speichern: ' + error.message);
+            }
+        }
+
+        function showAddUserDialog() {
+            document.getElementById('userDialogOverlay').classList.add('active');
+            // Clear form
+            document.getElementById('newUserForm').reset();
+            
+            // Show/hide Superuser option based on current user role
+            const superuserOption = document.querySelector('#formRolle option[value="superuser"]');
+            if (superuserOption) {
+                if (currentUser.rolle === 'superuser') {
+                    superuserOption.style.display = 'block';
+                } else {
+                    superuserOption.style.display = 'none';
+                }
+            }
+        }
+
+        function closeUserDialog() {
+            document.getElementById('userDialogOverlay').classList.remove('active');
+        }
+
+        let userPhotoData = null;
+
+        function handlePhotoUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            // Check file size (max 2MB)
+            if (file.size > 2 * 1024 * 1024) {
+                alert('⚠️ Bild ist zu groß!\n\nMaximale Größe: 2MB');
+                event.target.value = '';
+                return;
+            }
+
+            // Check file type
+            if (!file.type.startsWith('image/')) {
+                alert('⚠️ Bitte nur Bilder hochladen!');
+                event.target.value = '';
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                userPhotoData = e.target.result;
+                
+                // Show preview
+                document.getElementById('userPhotoPreview').src = userPhotoData;
+                document.getElementById('userPhotoPreview').style.display = 'block';
+                document.getElementById('userPhotoIcon').style.display = 'none';
+                document.getElementById('userPhotoText').style.display = 'none';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function saveNewUser(event) {
+            if (event) event.preventDefault();
+            console.log('saveNewUser called');
+
+            const userData = {
+                vorname: document.getElementById('formVorname').value.trim(),
+                nachname: document.getElementById('formNachname').value.trim(),
+                geschlecht: document.getElementById('formGeschlecht').value,
+                app_nr: document.getElementById('formAppNr').value.trim(),
+                abteilung: document.getElementById('formAbteilung').value.trim(),
+                telefon: document.getElementById('formTelefon').value.trim(),
+                mobil: document.getElementById('formMobil').value.trim(),
+                password: document.getElementById('formPassword').value,
+                rolle: document.getElementById('formRolle').value,
+                notizen: document.getElementById('formNotizen').value.trim()
+            };
+
+            console.log('User data:', userData);
+
+            // Validate required fields
+            if (!userData.vorname || !userData.nachname || !userData.geschlecht || 
+                !userData.app_nr || !userData.abteilung || !userData.password || !userData.rolle) {
+                alert('⚠️ Bitte füllen Sie alle Pflichtfelder aus!');
+                return false;
+            }
+
+            // Validate app_nr format
+            if (!/^\d{3}$/.test(userData.app_nr)) {
+                alert('⚠️ App-Nummer muss genau 3 Ziffern haben!');
+                return false;
+            }
+
+            // Validate password length
+            if (userData.password.length < 6) {
+                alert('⚠️ Passwort muss mindestens 6 Zeichen haben!');
+                return false;
+            }
+
+            try {
+                console.log('Checking if app_nr exists...');
+                
+                // Check if app_nr already exists
+                const usersRef = collection(db, 'users');
+                const q = query(usersRef, where('app_nr', '==', userData.app_nr));
+                const existingUser = await getDocs(q);
+
+                if (!existingUser.empty) {
+                    alert('❌ App-Nummer bereits vergeben!\n\nBitte wählen Sie eine andere Nummer.');
+                    return false;
+                }
+
+                console.log('Creating user...');
+
+                // Add metadata
+                userData.created_at = serverTimestamp();
+                userData.created_by = currentUser.id;
+
+                // Create user
+                const docRef = await addDoc(usersRef, userData);
+                console.log('User created with ID:', docRef.id);
+
+                closeUserDialog();
+                alert(`✅ Mitarbeiter erfolgreich angelegt!\n\nApp-Nr: ${userData.app_nr}\nName: ${userData.vorname} ${userData.nachname}\nAbteilung: ${userData.abteilung}\nRolle: ${userData.rolle === 'admin' ? 'Administrator' : 'User'}`);
+
+                // Reload participants list if on that tab
+                if (document.querySelector('.dashboard-tab[data-tab="teilnehmer"]')?.classList.contains('active')) {
+                    await loadParticipants();
+                }
+
+                return false;
+
+            } catch (error) {
+                console.error('Error creating user:', error);
+                alert('❌ Fehler beim Anlegen:\n\n' + error.message);
+                return false;
+            }
+        }
+
+        async function editParticipant(participantId) {
+            try {
+                // Get participant data
+                const tokenRef = doc(db, 'fcm_tokens', participantId);
+                const tokenSnap = await getDoc(tokenRef);
+                
+                if (!tokenSnap.exists()) {
+                    alert('❌ Teilnehmer nicht gefunden');
+                    return;
+                }
+                
+                const participant = tokenSnap.data();
+                
+                // Get user data from users collection if exists
+                const usersRef = collection(db, 'users');
+                const q = query(usersRef, where('app_nr', '==', participant.user_id || ''));
+                const userSnap = await getDocs(q);
+                
+                let userData = null;
+                let userDocId = null;
+                if (!userSnap.empty) {
+                    userData = userSnap.docs[0].data();
+                    userDocId = userSnap.docs[0].id;
+                }
+                
+                // Create edit dialog
+                const currentName = participant.user_name || 'Unbekannt';
+                const currentRole = participant.user_rolle || 'user';
+                
+                // For now, show simple prompts (you can enhance this with a modal later)
+                const newName = prompt(`Name bearbeiten:\n\nAktuell: ${currentName}`, currentName);
+                if (!newName || newName === currentName) {
+                    return; // Cancelled or no change
+                }
+                
+                // Update in fcm_tokens
+                await updateDoc(tokenRef, {
+                    user_name: newName.trim(),
+                    updated_at: serverTimestamp()
+                });
+                
+                // Also update in users collection if exists
+                if (userDocId) {
+                    const parts = newName.trim().split(' ');
+                    const vorname = parts[0] || '';
+                    const nachname = parts.slice(1).join(' ') || '';
+                    
+                    await updateDoc(doc(db, 'users', userDocId), {
+                        vorname: vorname,
+                        nachname: nachname,
+                        updated_at: serverTimestamp()
+                    });
+                }
+                
+                alert('✅ Teilnehmer aktualisiert');
+                await loadParticipants();
+                
+            } catch (error) {
+                console.error('Error editing participant:', error);
+                alert('❌ Fehler beim Bearbeiten: ' + error.message);
+            }
+        }
+
+        async function deleteParticipant(participantId, userName, userRolle) {
+            // Check if trying to delete a superuser
+            if (userRolle === 'superuser' && currentUser.rolle !== 'superuser') {
+                alert('⛔ ZUGRIFF VERWEIGERT!\n\nSuperuser können nur von anderen Superusern gelöscht werden!');
+                return;
+            }
+
+            if (!confirm(`Wirklich ${userName} löschen?\n\nDieser Benutzer wird keine Notrufe mehr empfangen können!`)) {
+                return;
+            }
+
+            try {
+                const tokenRef = doc(db, 'fcm_tokens', participantId);
+                await deleteDoc(tokenRef);
+
+                alert('✅ Teilnehmer gelöscht');
+                await loadParticipants();
+
+            } catch (error) {
+                console.error('Error deleting participant:', error);
+                alert('❌ Fehler beim Löschen: ' + error.message);
+            }
+        }
+
+        function logout() {
+            if (confirm('Wirklich abmelden?')) {
+                localStorage.removeItem('notrufUser');
+                location.reload();
+            }
+        }
+
+        async function showDashboard() {
+            // Only admins can access dashboard
+            if (currentUser.rolle !== 'admin' && currentUser.rolle !== 'leitzentrale' && currentUser.rolle !== 'superuser') {
+                alert('⛔ Nur Administratoren haben Zugriff auf das Dashboard!');
+                return;
+            }
+
+            // Hide other screens, show dashboard
+            document.getElementById('appScreen').classList.remove('active');
+            document.getElementById('historyScreen').classList.remove('active');
+            document.getElementById('dashboardScreen').classList.add('active');
+            
+            // Load default tab (Notrufe)
+            await switchDashboardTab('notrufe');
+        }
+
+        async function switchDashboardTab(tabName) {
+            // Update tab buttons
+            document.querySelectorAll('.dashboard-tab').forEach(tab => {
+                if (tab.dataset.tab === tabName) {
+                    tab.classList.add('active');
+                } else {
+                    tab.classList.remove('active');
+                }
+            });
+
+            // Update tab content
+            document.querySelectorAll('.dashboard-tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(`tab-${tabName}`).classList.add('active');
+
+            // Load data for selected tab
+            if (tabName === 'notrufe') {
+                await loadDashboardEmergencies();
+            } else if (tabName === 'uebersicht') {
+                await loadOverviewStats();
+            } else if (tabName === 'teilnehmer') {
+                await loadParticipants();
+            }
+        }
+
+        async function loadDashboardEmergencies() {
+            const listContainer = document.getElementById('dashboardList');
+            listContainer.innerHTML = '<div class="loading-message">Lade Notrufe...</div>';
+
+            try {
+                // Get ALL emergencies (not just current user)
+                const emergencyRef = collection(db, 'emergency_calls');
+                const q = query(emergencyRef, orderBy('timestamp', 'desc'));
+                
+                const querySnapshot = await getDocs(q);
+                
+                if (querySnapshot.empty) {
+                    listContainer.innerHTML = `
+                        <div class="empty-message">
+                            <p style="font-size: 1.125rem; margin-bottom: 0.5rem;">Keine Notrufe vorhanden</p>
+                            <p style="font-size: 0.875rem;">Wenn ein Notruf ausgelöst wird, erscheint er hier.</p>
+                        </div>
+                    `;
+                    updateDashboardStats([], [], []);
+                    return;
+                }
+
+                const emergencies = [];
+                querySnapshot.forEach(doc => {
+                    emergencies.push({ id: doc.id, ...doc.data() });
+                });
+
+                // Filter today's emergencies
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const todayEmergencies = emergencies.filter(e => {
+                    if (e.timestamp && e.timestamp.toDate) {
+                        const eDate = e.timestamp.toDate();
+                        eDate.setHours(0, 0, 0, 0);
+                        return eDate.getTime() === today.getTime();
+                    }
+                    return false;
+                });
+
+                // Count by status
+                const active = emergencies.filter(e => e.status === 'active');
+                const pending = emergencies.filter(e => e.status === 'in_progress' || e.status === 'waiting_employee' || e.status === 'waiting_admin');
+
+                updateDashboardStats(todayEmergencies, active, pending);
+
+                // Render list (show all, not just today)
+                listContainer.innerHTML = '';
+                emergencies.forEach(emergency => {
+                    const item = createDashboardItem(emergency);
+                    listContainer.appendChild(item);
+                });
+
+            } catch (error) {
+                console.error('Error loading dashboard emergencies:', error);
+                listContainer.innerHTML = `
+                    <div class="empty-message">
+                        <p style="color: #ef4444;">❌ Fehler beim Laden der Notrufe</p>
+                        <p style="font-size: 0.875rem;">${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        function updateDashboardStats(today, active, pending) {
+            document.getElementById('dashTotalEmergencies').textContent = today.length;
+            document.getElementById('dashActiveEmergencies').textContent = active.length;
+            document.getElementById('dashPendingEmergencies').textContent = pending.length;
+        }
+
+        function createDashboardItem(emergency) {
+            const div = document.createElement('div');
+            div.className = 'dashboard-item';
+
+            const isPolice = emergency.typ === 'notfall_110';
+            const typeIcon = isPolice ? '🚔' : '👥';
+            const typeText = isPolice ? 'Polizei-Notruf' : 'Unterstützung';
+            const typeClass = isPolice ? 'polizei' : 'support';
+
+            // Format timestamp
+            let timestamp = 'Unbekannt';
+            if (emergency.timestamp && emergency.timestamp.toDate) {
+                const date = emergency.timestamp.toDate();
+                timestamp = date.toLocaleString('de-DE', { 
+                    day: '2-digit', 
+                    month: '2-digit', 
+                    year: 'numeric',
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                });
+            }
+
+            // Status badge
+            let statusBadge = '';
+            let statusText = '';
+            switch(emergency.status) {
+                case 'active':
+                    statusBadge = 'status-active';
+                    statusText = 'Aktiv';
+                    break;
+                case 'in_progress':
+                    statusBadge = 'status-in-progress';
+                    statusText = 'In Bearbeitung';
+                    break;
+                case 'waiting_employee':
+                    statusBadge = 'status-waiting-employee';
+                    statusText = 'Warten auf MA';
+                    break;
+                case 'waiting_admin':
+                    statusBadge = 'status-waiting-admin';
+                    statusText = 'Warten auf Admin';
+                    break;
+                case 'completed':
+                    statusBadge = 'status-completed';
+                    statusText = 'Abgeschlossen';
+                    break;
+                case 'false_alarm':
+                    statusBadge = 'status-false-alarm';
+                    statusText = '⚠️ Fehlalarm';
+                    break;
+                default:
+                    statusBadge = 'status-active';
+                    statusText = emergency.status || 'Unbekannt';
+            }
+
+            // GPS link
+            const hasGPS = emergency.gps_available !== false && emergency.gps_latitude && emergency.gps_longitude;
+            const gpsLink = hasGPS 
+                ? `https://www.google.com/maps?q=${emergency.gps_latitude},${emergency.gps_longitude}`
+                : null;
+
+            div.innerHTML = `
+                <div class="dashboard-item-header">
+                    <div class="dashboard-item-info">
+                        <div class="dashboard-item-user">
+                            ${typeIcon} ${emergency.user_name}
+                        </div>
+                        <div class="dashboard-item-dept">
+                            ${emergency.user_dienststelle} • ${typeText}
+                        </div>
+                    </div>
+                    <div class="history-status-badge ${statusBadge}">
+                        ${statusText}
+                    </div>
+                </div>
+                <div class="history-item-details">
+                    <div class="history-item-detail">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/>
+                        </svg>
+                        ${timestamp}
+                    </div>
+                    ${hasGPS ? `
+                        <div class="history-item-detail">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                            </svg>
+                            GPS: ${emergency.gps_latitude.toFixed(5)}, ${emergency.gps_longitude.toFixed(5)}
+                        </div>
+                    ` : ''}
+                </div>
+                <div class="dashboard-item-actions">
+                    ${hasGPS ? `
+                        <button class="dashboard-btn dashboard-btn-view" onclick="window.open('${gpsLink}', '_blank')">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                            </svg>
+                            Maps
+                        </button>
+                    ` : ''}
+                    ${emergency.status === 'active' ? `
+                        <button class="dashboard-btn dashboard-btn-take" onclick="takeEmergency('${emergency.id}')">
+                            👋 Übernehmen
+                        </button>
+                    ` : emergency.status === 'waiting_admin' ? `
+                        <button class="dashboard-btn dashboard-btn-complete" onclick="completeEmergency('${emergency.id}')">
+                            ✅ Abschließen
+                        </button>
+                    ` : ''}
+                    <button class="dashboard-btn dashboard-btn-view" onclick="viewReport('${emergency.id}')">
+                        👁️ Bericht
+                    </button>
+                </div>
+            `;
+
+            return div;
+        }
+
+        async function takeEmergency(emergencyId) {
+            if (!confirm('Diesen Notruf übernehmen und in Bearbeitung setzen?')) {
+                return;
+            }
+
+            try {
+                const emergencyRef = doc(db, 'emergency_calls', emergencyId);
+                await updateDoc(emergencyRef, {
+                    status: 'in_progress',
+                    admin_id: currentUser.id,
+                    admin_name: `${currentUser.vorname} ${currentUser.nachname}`,
+                    taken_at: serverTimestamp()
+                });
+
+                alert('✅ Notruf übernommen!');
+                await loadDashboardEmergencies();
+
+            } catch (error) {
+                console.error('Error taking emergency:', error);
+                alert('❌ Fehler beim Übernehmen: ' + error.message);
+            }
+        }
+
+        async function completeEmergency(emergencyId) {
+            if (!confirm('Diesen Notruf als abgeschlossen markieren?')) {
+                return;
+            }
+
+            try {
+                const emergencyRef = doc(db, 'emergency_calls', emergencyId);
+                await updateDoc(emergencyRef, {
+                    status: 'completed',
+                    completed_at: serverTimestamp(),
+                    completed_by: currentUser.id
+                });
+
+                alert('✅ Notruf abgeschlossen!');
+                await loadDashboardEmergencies();
+
+            } catch (error) {
+                console.error('Error completing emergency:', error);
+                alert('❌ Fehler beim Abschließen: ' + error.message);
+            }
+        }
+
+        async function loadOverviewStats() {
+            try {
+                // Get all emergencies
+                const emergencyRef = collection(db, 'emergency_calls');
+                const querySnapshot = await getDocs(emergencyRef);
+                
+                const emergencies = [];
+                querySnapshot.forEach(doc => {
+                    emergencies.push({ id: doc.id, ...doc.data() });
+                });
+
+                // Calculate monthly stats
+                const now = new Date();
+                const thisMonth = emergencies.filter(e => {
+                    if (e.timestamp && e.timestamp.toDate) {
+                        const eDate = e.timestamp.toDate();
+                        return eDate.getMonth() === now.getMonth() && eDate.getFullYear() === now.getFullYear();
+                    }
+                    return false;
+                });
+
+                const monthlyPolice = thisMonth.filter(e => e.typ === 'notfall_110').length;
+                const monthlySupport = thisMonth.filter(e => e.typ === 'unterstützung').length;
+                const monthlyFalseAlarms = thisMonth.filter(e => e.status === 'false_alarm').length;
+
+                document.getElementById('monthlyTotal').textContent = thisMonth.length;
+                document.getElementById('monthlyPolice').textContent = monthlyPolice;
+                document.getElementById('monthlySupport').textContent = monthlySupport;
+                document.getElementById('monthlyFalseAlarms').textContent = monthlyFalseAlarms;
+
+                // Calculate average processing time
+                const completedThisMonth = thisMonth.filter(e => e.status === 'completed' && e.completed_at && e.timestamp);
+                if (completedThisMonth.length > 0) {
+                    let totalMinutes = 0;
+                    completedThisMonth.forEach(e => {
+                        const start = e.timestamp.toDate();
+                        const end = e.completed_at.toDate();
+                        const diffMs = end - start;
+                        const diffMins = Math.floor(diffMs / 60000);
+                        totalMinutes += diffMins;
+                    });
+                    const avgMinutes = Math.floor(totalMinutes / completedThisMonth.length);
+                    document.getElementById('avgProcessingTime').textContent = avgMinutes;
+                } else {
+                    document.getElementById('avgProcessingTime').textContent = '--';
+                }
+
+                // Top users
+                const userCounts = {};
+                thisMonth.forEach(e => {
+                    const userName = e.user_name || 'Unbekannt';
+                    userCounts[userName] = (userCounts[userName] || 0) + 1;
+                });
+
+                const sortedUsers = Object.entries(userCounts)
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 5);
+
+                const topUsersList = document.getElementById('topUsersList');
+                if (sortedUsers.length === 0) {
+                    topUsersList.innerHTML = '<div class="loading-message">Keine Daten verfügbar</div>';
+                } else {
+                    topUsersList.innerHTML = '';
+                    sortedUsers.forEach(([name, count], index) => {
+                        const item = document.createElement('div');
+                        item.className = 'top-user-item';
+                        item.innerHTML = `
+                            <div class="top-user-info">
+                                <div class="top-user-rank">${index + 1}.</div>
+                                <div class="top-user-name">${name}</div>
+                            </div>
+                            <div class="top-user-count">${count}</div>
+                        `;
+                        topUsersList.appendChild(item);
+                    });
+                }
+
+            } catch (error) {
+                console.error('Error loading overview stats:', error);
+                alert('❌ Fehler beim Laden der Statistiken: ' + error.message);
+            }
+        }
+
+        async function loadParticipants() {
+            const listContainer = document.getElementById('participantsList');
+            listContainer.innerHTML = '<div class="loading-message">Lade Teilnehmer...</div>';
+
+            try {
+                // Get all users from fcm_tokens (this shows who has registered)
+                const tokensRef = collection(db, 'fcm_tokens');
+                const querySnapshot = await getDocs(tokensRef);
+                
+                if (querySnapshot.empty) {
+                    listContainer.innerHTML = `
+                        <div class="empty-message">
+                            <p style="font-size: 1.125rem; margin-bottom: 0.5rem;">Keine Teilnehmer registriert</p>
+                            <p style="font-size: 0.875rem;">Wenn sich Mitarbeiter anmelden, erscheinen sie hier.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                const participants = [];
+                querySnapshot.forEach(doc => {
+                    participants.push({ id: doc.id, ...doc.data() });
+                });
+
+                // Render list
+                listContainer.innerHTML = '';
+                participants.forEach(participant => {
+                    const item = createParticipantItem(participant);
+                    listContainer.appendChild(item);
+                });
+
+            } catch (error) {
+                console.error('Error loading participants:', error);
+                listContainer.innerHTML = `
+                    <div class="empty-message">
+                        <p style="color: #ef4444;">❌ Fehler beim Laden der Teilnehmer</p>
+                        <p style="font-size: 0.875rem;">${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        function createParticipantItem(participant) {
+            const div = document.createElement('div');
+            div.className = 'participant-item';
+
+            const isSuperuser = participant.user_rolle === 'superuser';
+            const isAdmin = participant.user_rolle === 'admin' || participant.user_rolle === 'leitzentrale';
+            
+            let badgeClass, badgeText;
+            if (isSuperuser) {
+                badgeClass = 'badge-superuser';
+                badgeText = '👑 Superuser';
+            } else if (isAdmin) {
+                badgeClass = 'badge-admin';
+                badgeText = 'Admin';
+            } else {
+                badgeClass = 'badge-user';
+                badgeText = 'User';
+            }
+
+            // Superuser can only be deleted by another superuser
+            const canDelete = !isSuperuser || currentUser.rolle === 'superuser';
+
+            div.innerHTML = `
+                <div class="participant-info">
+                    <div class="participant-name">${participant.user_name || 'Unbekannt'}</div>
+                    <div class="participant-details">
+                        <span class="participant-badge ${badgeClass}">${badgeText}</span>
+                        <span>User-ID: ${participant.user_id}</span>
+                        <span>Registriert</span>
+                    </div>
+                </div>
+                <div class="participant-actions">
+                    <button class="participant-btn participant-btn-edit" onclick="editParticipant('${participant.id}')">
+                        ✏️ Bearbeiten
+                    </button>
+                    ${canDelete ? `
+                        <button class="participant-btn participant-btn-delete" onclick="deleteParticipant('${participant.id}', '${participant.user_name}', '${participant.user_rolle}')">
+                            🗑️ Löschen
+                        </button>
+                    ` : `
+                        <button class="participant-btn participant-btn-delete" disabled style="opacity: 0.5; cursor: not-allowed;" title="Superuser können nur von anderen Superusern gelöscht werden">
+                            🔒 Geschützt
+                        </button>
+                    `}
+                </div>
+            `;
+
+            return div;
+        }
+    </script>
+</body>
+</html>
