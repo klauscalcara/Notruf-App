@@ -77,10 +77,10 @@
             margin-bottom: 1.5rem;
         }
 
-        label {
+        .login-container label {
             display: block;
             margin-bottom: 0.5rem;
-            color: #334155;
+            color: #334155 !important;
             font-weight: 500;
             font-size: 0.95rem;
         }
@@ -3005,49 +3005,119 @@
             const contentDiv = document.getElementById('reportContent');
             
             const employeeReport = emergency.employee_report || 'Noch nicht ausgefüllt';
-            const adminSummary = emergency.admin_summary || 'Noch nicht ausgefüllt';
-            const adminActions = emergency.admin_actions || 'Noch nicht ausgefüllt';
-            const adminResult = emergency.admin_result || 'Noch nicht ausgefüllt';
+            const adminSummary = emergency.admin_summary || '';
+            const adminActions = emergency.admin_actions || '';
+            const adminResult = emergency.admin_result || '';
 
-            contentDiv.innerHTML = `
-                <div class="report-section readonly">
-                    <div class="report-section-header">
-                        <div class="report-section-title">1. VORFALLBESCHREIBUNG (Mitarbeiter)</div>
-                        <div class="report-section-badge badge-employee">Mitarbeiter</div>
+            // Check if current user is Admin/Superuser
+            const isAdmin = currentUser.rolle === 'admin' || currentUser.rolle === 'superuser' || currentUser.rolle === 'leitzentrale';
+            const canEdit = isAdmin && emergency.status === 'waiting_admin';
+
+            if (canEdit) {
+                // EDITABLE for Admin
+                contentDiv.innerHTML = `
+                    <div class="report-info-box">
+                        📝 Admin-Bericht: Bitte füllen Sie die Felder aus und schließen Sie den Vorfall ab.
                     </div>
-                    <div style="color: rgba(255,255,255,0.9); line-height: 1.6; white-space: pre-wrap;">${employeeReport}</div>
-                </div>
 
-                <div class="report-section readonly">
-                    <div class="report-section-header">
-                        <div class="report-section-title">2. ZUSAMMENFASSUNG (Admin/Leitzentrale)</div>
-                        <div class="report-section-badge badge-admin">Admin</div>
+                    <div class="report-section readonly">
+                        <div class="report-section-header">
+                            <div class="report-section-title">1. VORFALLBESCHREIBUNG (Mitarbeiter)</div>
+                            <div class="report-section-badge badge-employee">MITARBEITER</div>
+                        </div>
+                        <div style="color: rgba(255,255,255,0.9); line-height: 1.6; white-space: pre-wrap;">${employeeReport}</div>
                     </div>
-                    <div style="color: rgba(255,255,255,0.9); line-height: 1.6; white-space: pre-wrap;">${adminSummary}</div>
-                </div>
 
-                <div class="report-section readonly">
-                    <div class="report-section-header">
-                        <div class="report-section-title">3. DURCHGEFÜHRTE MASSNAHMEN (Admin)</div>
-                        <div class="report-section-badge badge-admin">Admin</div>
+                    <div class="report-section">
+                        <div class="report-section-header">
+                            <div class="report-section-title">2. ZUSAMMENFASSUNG (Admin/Leitzentrale)</div>
+                            <div class="report-section-badge badge-admin">ADMIN</div>
+                        </div>
+                        <textarea 
+                            class="report-textarea" 
+                            id="adminSummaryText"
+                            placeholder="Zusammenfassung des Vorfalls aus Admin-Sicht..."
+                        >${adminSummary}</textarea>
                     </div>
-                    <div style="color: rgba(255,255,255,0.9); line-height: 1.6; white-space: pre-wrap;">${adminActions}</div>
-                </div>
 
-                <div class="report-section readonly">
-                    <div class="report-section-header">
-                        <div class="report-section-title">4. ERGEBNIS UND ABSCHLUSS (Admin)</div>
-                        <div class="report-section-badge badge-admin">Admin</div>
+                    <div class="report-section">
+                        <div class="report-section-header">
+                            <div class="report-section-title">3. DURCHGEFÜHRTE MASSNAHMEN (Admin)</div>
+                            <div class="report-section-badge badge-admin">ADMIN</div>
+                        </div>
+                        <textarea 
+                            class="report-textarea" 
+                            id="adminActionsText"
+                            placeholder="Welche Maßnahmen wurden durchgeführt?..."
+                        >${adminActions}</textarea>
                     </div>
-                    <div style="color: rgba(255,255,255,0.9); line-height: 1.6; white-space: pre-wrap;">${adminResult}</div>
-                </div>
 
-                <div class="report-actions">
-                    <button class="report-btn report-btn-secondary" onclick="closeReport()">
-                        ✕ Schließen
-                    </button>
-                </div>
-            `;
+                    <div class="report-section">
+                        <div class="report-section-header">
+                            <div class="report-section-title">4. ERGEBNIS UND ABSCHLUSS (Admin)</div>
+                            <div class="report-section-badge badge-admin">ADMIN</div>
+                        </div>
+                        <textarea 
+                            class="report-textarea" 
+                            id="adminResultText"
+                            placeholder="Ergebnis und Abschluss des Vorfalls..."
+                        >${adminResult}</textarea>
+                    </div>
+
+                    <div class="report-actions">
+                        <button class="report-btn report-btn-secondary" onclick="saveAdminReport(false)">
+                            💾 Speichern
+                        </button>
+                        <button class="report-btn report-btn-primary" onclick="saveAdminReport(true)">
+                            ✅ Vorfall abschließen
+                        </button>
+                        <button class="report-btn report-btn-secondary" onclick="closeReport()">
+                            ✕ Schließen
+                        </button>
+                    </div>
+                `;
+            } else {
+                // READONLY view
+                contentDiv.innerHTML = `
+                    <div class="report-section readonly">
+                        <div class="report-section-header">
+                            <div class="report-section-title">1. VORFALLBESCHREIBUNG (Mitarbeiter)</div>
+                            <div class="report-section-badge badge-employee">MITARBEITER</div>
+                        </div>
+                        <div style="color: rgba(255,255,255,0.9); line-height: 1.6; white-space: pre-wrap;">${employeeReport}</div>
+                    </div>
+
+                    <div class="report-section readonly">
+                        <div class="report-section-header">
+                            <div class="report-section-title">2. ZUSAMMENFASSUNG (Admin/Leitzentrale)</div>
+                            <div class="report-section-badge badge-admin">ADMIN</div>
+                        </div>
+                        <div style="color: rgba(255,255,255,0.9); line-height: 1.6; white-space: pre-wrap;">${adminSummary || 'Noch nicht ausgefüllt'}</div>
+                    </div>
+
+                    <div class="report-section readonly">
+                        <div class="report-section-header">
+                            <div class="report-section-title">3. DURCHGEFÜHRTE MASSNAHMEN (Admin)</div>
+                            <div class="report-section-badge badge-admin">ADMIN</div>
+                        </div>
+                        <div style="color: rgba(255,255,255,0.9); line-height: 1.6; white-space: pre-wrap;">${adminActions || 'Noch nicht ausgefüllt'}</div>
+                    </div>
+
+                    <div class="report-section readonly">
+                        <div class="report-section-header">
+                            <div class="report-section-title">4. ERGEBNIS UND ABSCHLUSS (Admin)</div>
+                            <div class="report-section-badge badge-admin">ADMIN</div>
+                        </div>
+                        <div style="color: rgba(255,255,255,0.9); line-height: 1.6; white-space: pre-wrap;">${adminResult || 'Noch nicht ausgefüllt'}</div>
+                    </div>
+
+                    <div class="report-actions">
+                        <button class="report-btn report-btn-secondary" onclick="closeReport()">
+                            ✕ Schließen
+                        </button>
+                    </div>
+                `;
+            }
         }
 
         async function saveEmployeeReport(submitToAdmin) {
@@ -3085,6 +3155,50 @@
 
             } catch (error) {
                 console.error('Error saving employee report:', error);
+                alert('❌ Fehler beim Speichern: ' + error.message);
+            }
+        }
+
+        async function saveAdminReport(completeCase) {
+            const summary = document.getElementById('adminSummaryText').value.trim();
+            const actions = document.getElementById('adminActionsText').value.trim();
+            const result = document.getElementById('adminResultText').value.trim();
+
+            if (completeCase && (!summary || !actions || !result)) {
+                alert('⚠️ Bitte füllen Sie alle Felder aus, um den Vorfall abzuschließen!');
+                return;
+            }
+
+            if (completeCase && !confirm('Vorfall abschließen?\n\nDer Bericht wird als abgeschlossen markiert!')) {
+                return;
+            }
+
+            try {
+                const emergencyRef = doc(db, 'emergency_calls', currentReportId);
+                const updateData = {
+                    admin_summary: summary,
+                    admin_actions: actions,
+                    admin_result: result,
+                    admin_report_updated: serverTimestamp()
+                };
+
+                if (completeCase) {
+                    updateData.status = 'completed';
+                    updateData.completed_at = serverTimestamp();
+                    updateData.completed_by = currentUser.id;
+                }
+
+                await updateDoc(emergencyRef, updateData);
+
+                if (completeCase) {
+                    alert('✅ Vorfall abgeschlossen!');
+                    closeReport();
+                } else {
+                    alert('✅ Bericht gespeichert!');
+                }
+
+            } catch (error) {
+                console.error('Error saving admin report:', error);
                 alert('❌ Fehler beim Speichern: ' + error.message);
             }
         }
@@ -3203,8 +3317,21 @@
                 const docRef = await addDoc(usersRef, userData);
                 console.log('User created with ID:', docRef.id);
 
+                // ALSO create entry in fcm_tokens so user appears in Participants list immediately!
+                const tokenRef = doc(db, 'fcm_tokens', docRef.id);
+                await setDoc(tokenRef, {
+                    user_id: userData.app_nr,
+                    user_name: `${userData.vorname} ${userData.nachname}`,
+                    user_rolle: userData.rolle,
+                    user_abteilung: userData.abteilung,
+                    fcm_token: null, // Will be set when user logs in
+                    created_at: serverTimestamp(),
+                    created_by_admin: true
+                });
+                console.log('FCM token placeholder created');
+
                 closeUserDialog();
-                alert(`✅ Mitarbeiter erfolgreich angelegt!\n\nApp-Nr: ${userData.app_nr}\nName: ${userData.vorname} ${userData.nachname}\nAbteilung: ${userData.abteilung}\nRolle: ${userData.rolle === 'admin' ? 'Administrator' : 'User'}`);
+                alert(`✅ Mitarbeiter erfolgreich angelegt!\n\nApp-Nr: ${userData.app_nr}\nName: ${userData.vorname} ${userData.nachname}\nAbteilung: ${userData.abteilung}\nRolle: ${userData.rolle === 'superuser' ? 'Superuser' : userData.rolle === 'admin' ? 'Administrator' : 'User'}`);
 
                 // Reload participants list if on that tab
                 if (document.querySelector('.dashboard-tab[data-tab="teilnehmer"]')?.classList.contains('active')) {
