@@ -3529,8 +3529,30 @@
             }
 
             try {
+                // Get participant data first (to get app_nr)
                 const tokenRef = doc(db, 'fcm_tokens', participantId);
+                const tokenSnap = await getDoc(tokenRef);
+                
+                let appNr = null;
+                if (tokenSnap.exists()) {
+                    appNr = tokenSnap.data().user_id;
+                }
+                
+                // Delete from fcm_tokens
                 await deleteDoc(tokenRef);
+
+                // ALSO delete from users collection (if we have app_nr)
+                if (appNr) {
+                    const usersRef = collection(db, 'users');
+                    const q = query(usersRef, where('app_nr', '==', appNr));
+                    const userSnap = await getDocs(q);
+                    
+                    if (!userSnap.empty) {
+                        const userDocId = userSnap.docs[0].id;
+                        await deleteDoc(doc(db, 'users', userDocId));
+                        console.log('User deleted from users collection');
+                    }
+                }
 
                 alert('✅ Teilnehmer gelöscht');
                 await loadParticipants();
