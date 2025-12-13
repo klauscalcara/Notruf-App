@@ -2009,7 +2009,7 @@
                         <select id="formRolle" required>
                             <option value="user">Normaler User</option>
                             <option value="admin">Administrator</option>
-                            <option value="superuser">Superuser (nur für Superuser sichtbar)</option>
+                            <option value="superuser">Master Admin (nur für Master Admin sichtbar)</option>
                         </select>
                     </div>
 
@@ -2195,13 +2195,16 @@
             const userDept = currentUser.abteilung;
             document.getElementById('userName').textContent = `${userName} • ${userDept}`;
 
-            // Show dashboard button for admin
-            if (currentUser.rolle === 'admin' || currentUser.rolle === 'leitzentrale') {
+            // Admin/Superuser/Leitzentrale gehen DIREKT ins Dashboard
+            if (currentUser.rolle === 'admin' || currentUser.rolle === 'superuser' || currentUser.rolle === 'leitzentrale') {
                 document.getElementById('dashboardBtn').style.display = 'inline-block';
+                // Zeige Dashboard direkt
+                showDashboard();
+            } else {
+                // Normale User sehen Notruf-Buttons
+                // Setup push notifications with FCM
+                setupFCMNotifications();
             }
-
-            // Setup push notifications with FCM
-            setupFCMNotifications();
         }
 
         async function setupFCMNotifications() {
@@ -3238,6 +3241,12 @@
             // Clear form
             document.getElementById('newUserForm').reset();
             
+            // Reset edit mode
+            window.isEditMode = false;
+            window.currentEditParticipantId = null;
+            document.getElementById('formAppNr').disabled = false;
+            document.getElementById('formPassword').required = true;
+            
             // Show/hide Superuser option based on current user role
             const superuserOption = document.querySelector('#formRolle option[value="superuser"]');
             if (superuserOption) {
@@ -3290,6 +3299,9 @@
             if (event) event.preventDefault();
             console.log('saveNewUser called');
 
+            const isEditMode = window.isEditMode || false;
+            const editParticipantId = window.currentEditParticipantId;
+
             const userData = {
                 vorname: document.getElementById('formVorname').value.trim(),
                 nachname: document.getElementById('formNachname').value.trim(),
@@ -3303,13 +3315,19 @@
                 notizen: document.getElementById('formNotizen').value.trim()
             };
 
-            console.log('User data:', userData);
+            console.log('User data:', userData, 'isEditMode:', isEditMode);
 
             // Validate required fields
-            if (!userData.vorname || !userData.nachname || !userData.geschlecht || 
-                !userData.app_nr || !userData.abteilung || !userData.password || !userData.rolle) {
-                alert('⚠️ Bitte füllen Sie alle Pflichtfelder aus!');
-                return false;
+            const requiredFields = ['vorname', 'nachname', 'geschlecht', 'app_nr', 'abteilung', 'rolle'];
+            if (!isEditMode) {
+                requiredFields.push('password'); // Password required only for new users
+            }
+            
+            for (const field of requiredFields) {
+                if (!userData[field]) {
+                    alert('⚠️ Bitte füllen Sie alle Pflichtfelder aus!');
+                    return false;
+                }
             }
 
             // Validate app_nr format
@@ -3318,50 +3336,103 @@
                 return false;
             }
 
-            // Validate password length
-            if (userData.password.length < 6) {
+            // Validate password length (if provided)
+            if (userData.password && userData.password.length < 6) {
                 alert('⚠️ Passwort muss mindestens 6 Zeichen haben!');
                 return false;
             }
 
             try {
-                console.log('Checking if app_nr exists...');
-                
-                // Check if app_nr already exists
-                const usersRef = collection(db, 'users');
-                const q = query(usersRef, where('app_nr', '==', userData.app_nr));
-                const existingUser = await getDocs(q);
+                if (isEditMode) {
+                    // EDIT MODE - Update existing user
+                    console.log('Updating user...');
+                    
+                    // Find user in users collection
+                    const usersRef = collection(db, 'users');
+                    const q = query(usersRef, where('app_nr', '==', userData.app_nr));
+                    const userSnap = await getDocs(q);
+                    
+                    if (!userSnap.empty) {
+                        const userDocId = userSnap.docs[0].id;
+                        const updateData = {
+                            vorname: userData.vorname,
+                            nachname: userData.nachname,
+                            geschlecht: userData.geschlecht,
+                            abteilung: userData.abteilung,
+                            telefon: userData.telefon,
+                            mobil: userData.mobil,
+                            rolle: userData.rolle,
+                            notizen: userData.notizen,
+                            updated_at: serverTimestamp()
+                        };
+                        
+                        // Only update password if provided
+                        if (userData.password) {
+                            updateData.password = userData.password;
+                        }
+                        
+                        await updateDoc(doc(db, 'users', userDocId), updateData);
+                        console.log('User updated in users collection');
+                    }
+                    
+                    // Update fcm_tokens
+                    const tokenRef = doc(db, 'fcm_tokens', editParticipantId);
+                    await updateDoc(tokenRef, {
+                        user_name: `${userData.vorname} ${userData.nachname}`,
+                        user_rolle: userData.rolle,
+                        user_abteilung: userData.abteilung,
+                        updated_at: serverTimestamp()
+                    });
+                    console.log('User updated in fcm_tokens');
+                    
+                    closeUserDialog();
+                    alert(`✅ Mitarbeiter aktualisiert!\n\n${userData.vorname} ${userData.nachname}`);
+                    
+                    // Reset edit mode
+                    window.isEditMode = false;
+                    window.currentEditParticipantId = null;
+                    document.getElementById('formAppNr').disabled = false;
+                    
+                } else {
+                    // CREATE MODE - New user
+                    console.log('Checking if app_nr exists...');
+                    
+                    // Check if app_nr already exists
+                    const usersRef = collection(db, 'users');
+                    const q = query(usersRef, where('app_nr', '==', userData.app_nr));
+                    const existingUser = await getDocs(q);
 
-                if (!existingUser.empty) {
-                    alert('❌ App-Nummer bereits vergeben!\n\nBitte wählen Sie eine andere Nummer.');
-                    return false;
+                    if (!existingUser.empty) {
+                        alert('❌ App-Nummer bereits vergeben!\n\nBitte wählen Sie eine andere Nummer.');
+                        return false;
+                    }
+
+                    console.log('Creating user...');
+
+                    // Add metadata
+                    userData.created_at = serverTimestamp();
+                    userData.created_by = currentUser.id;
+
+                    // Create user
+                    const docRef = await addDoc(usersRef, userData);
+                    console.log('User created with ID:', docRef.id);
+
+                    // ALSO create entry in fcm_tokens so user appears in Participants list immediately!
+                    const tokenRef = doc(db, 'fcm_tokens', docRef.id);
+                    await setDoc(tokenRef, {
+                        user_id: userData.app_nr,
+                        user_name: `${userData.vorname} ${userData.nachname}`,
+                        user_rolle: userData.rolle,
+                        user_abteilung: userData.abteilung,
+                        fcm_token: null, // Will be set when user logs in
+                        created_at: serverTimestamp(),
+                        created_by_admin: true
+                    });
+                    console.log('FCM token placeholder created');
+
+                    closeUserDialog();
+                    alert(`✅ Mitarbeiter erfolgreich angelegt!\n\nApp-Nr: ${userData.app_nr}\nName: ${userData.vorname} ${userData.nachname}\nAbteilung: ${userData.abteilung}\nRolle: ${userData.rolle === 'superuser' ? 'Master Admin' : userData.rolle === 'admin' ? 'Administrator' : 'User'}`);
                 }
-
-                console.log('Creating user...');
-
-                // Add metadata
-                userData.created_at = serverTimestamp();
-                userData.created_by = currentUser.id;
-
-                // Create user
-                const docRef = await addDoc(usersRef, userData);
-                console.log('User created with ID:', docRef.id);
-
-                // ALSO create entry in fcm_tokens so user appears in Participants list immediately!
-                const tokenRef = doc(db, 'fcm_tokens', docRef.id);
-                await setDoc(tokenRef, {
-                    user_id: userData.app_nr,
-                    user_name: `${userData.vorname} ${userData.nachname}`,
-                    user_rolle: userData.rolle,
-                    user_abteilung: userData.abteilung,
-                    fcm_token: null, // Will be set when user logs in
-                    created_at: serverTimestamp(),
-                    created_by_admin: true
-                });
-                console.log('FCM token placeholder created');
-
-                closeUserDialog();
-                alert(`✅ Mitarbeiter erfolgreich angelegt!\n\nApp-Nr: ${userData.app_nr}\nName: ${userData.vorname} ${userData.nachname}\nAbteilung: ${userData.abteilung}\nRolle: ${userData.rolle === 'superuser' ? 'Superuser' : userData.rolle === 'admin' ? 'Administrator' : 'User'}`);
 
                 // Reload participants list if on that tab
                 if (document.querySelector('.dashboard-tab[data-tab="teilnehmer"]')?.classList.contains('active')) {
@@ -3371,8 +3442,8 @@
                 return false;
 
             } catch (error) {
-                console.error('Error creating user:', error);
-                alert('❌ Fehler beim Anlegen:\n\n' + error.message);
+                console.error('Error saving user:', error);
+                alert('❌ Fehler beim Speichern:\n\n' + error.message);
                 return false;
             }
         }
@@ -3402,32 +3473,43 @@
                     userDocId = userSnap.docs[0].id;
                 }
                 
-                // Create edit dialog
-                const currentName = participant.user_name || 'Unbekannt';
-                const currentRole = participant.user_rolle || 'user';
-                
-                // For now, show simple prompts (you can enhance this with a modal later)
-                const newName = prompt(`Name bearbeiten:\n\nAktuell: ${currentName}`, currentName);
-                if (!newName || newName === currentName) {
-                    return; // Cancelled or no change
-                }
-                
-                // Update in fcm_tokens
-                await updateDoc(tokenRef, {
-                    user_name: newName.trim(),
-                    updated_at: serverTimestamp()
+                // Open dialog with data
+                showEditUserDialog(participantId, userData || {
+                    app_nr: participant.user_id,
+                    vorname: (participant.user_name || '').split(' ')[0],
+                    nachname: (participant.user_name || '').split(' ').slice(1).join(' '),
+                    rolle: participant.user_rolle || 'user',
+                    abteilung: participant.user_abteilung || ''
                 });
                 
-                // Also update in users collection if exists
-                if (userDocId) {
-                    const parts = newName.trim().split(' ');
-                    const vorname = parts[0] || '';
-                    const nachname = parts.slice(1).join(' ') || '';
-                    
-                    await updateDoc(doc(db, 'users', userDocId), {
-                        vorname: vorname,
-                        nachname: nachname,
-                        updated_at: serverTimestamp()
+            } catch (error) {
+                console.error('Error editing participant:', error);
+                alert('❌ Fehler beim Bearbeiten: ' + error.message);
+            }
+        }
+
+        function showEditUserDialog(participantId, userData) {
+            // Open dialog
+            document.getElementById('userDialogOverlay').classList.add('active');
+            
+            // Fill form with existing data
+            document.getElementById('formVorname').value = userData.vorname || '';
+            document.getElementById('formNachname').value = userData.nachname || '';
+            document.getElementById('formGeschlecht').value = userData.geschlecht || 'männlich';
+            document.getElementById('formAppNr').value = userData.app_nr || '';
+            document.getElementById('formAppNr').disabled = true; // Can't change app_nr
+            document.getElementById('formAbteilung').value = userData.abteilung || '';
+            document.getElementById('formTelefon').value = userData.telefon || '';
+            document.getElementById('formMobil').value = userData.mobil || '';
+            document.getElementById('formPassword').value = userData.password || '';
+            document.getElementById('formPassword').required = false; // Optional on edit
+            document.getElementById('formRolle').value = userData.rolle || 'user';
+            document.getElementById('formNotizen').value = userData.notizen || '';
+            
+            // Store participantId for save
+            window.currentEditParticipantId = participantId;
+            window.isEditMode = true;
+        }
                     });
                 }
                 
@@ -3443,7 +3525,7 @@
         async function deleteParticipant(participantId, userName, userRolle) {
             // Check if trying to delete a superuser
             if (userRolle === 'superuser' && currentUser.rolle !== 'superuser') {
-                alert('⛔ ZUGRIFF VERWEIGERT!\n\nSuperuser können nur von anderen Superusern gelöscht werden!');
+                alert('⛔ ZUGRIFF VERWEIGERT!\n\nMaster Admin können nur von anderen Master Admins gelöscht werden!');
                 return;
             }
 
@@ -4026,12 +4108,25 @@
                     return;
                 }
 
+                // Filter out superusers (they should not appear in participant list)
+                const filteredParticipants = participants.filter(p => p.user_rolle !== 'superuser');
+
+                if (filteredParticipants.length === 0) {
+                    listContainer.innerHTML = `
+                        <div class="empty-message">
+                            <p style="font-size: 1.125rem; margin-bottom: 0.5rem;">Keine Teilnehmer</p>
+                            <p style="font-size: 0.875rem;">Erstellen Sie Mitarbeiter über "+ Benutzer hinzufügen"</p>
+                        </div>
+                    `;
+                    return;
+                }
+
                 // Sort by user_id
-                participants.sort((a, b) => (a.user_id || '').localeCompare(b.user_id || ''));
+                filteredParticipants.sort((a, b) => (a.user_id || '').localeCompare(b.user_id || ''));
 
                 // Render list
                 listContainer.innerHTML = '';
-                participants.forEach(participant => {
+                filteredParticipants.forEach(participant => {
                     const item = createParticipantItem(participant);
                     listContainer.appendChild(item);
                 });
@@ -4057,7 +4152,7 @@
             let badgeClass, badgeText;
             if (isSuperuser) {
                 badgeClass = 'badge-superuser';
-                badgeText = '👑 Superuser';
+                badgeText = '👑 Master Admin';
             } else if (isAdmin) {
                 badgeClass = 'badge-admin';
                 badgeText = 'Admin';
@@ -4087,7 +4182,7 @@
                             🗑️ Löschen
                         </button>
                     ` : `
-                        <button class="participant-btn participant-btn-delete" disabled style="opacity: 0.5; cursor: not-allowed;" title="Superuser können nur von anderen Superusern gelöscht werden">
+                        <button class="participant-btn participant-btn-delete" disabled style="opacity: 0.5; cursor: not-allowed;" title="Master Admin können nur von anderen Master Admins gelöscht werden">
                             🔒 Geschützt
                         </button>
                     `}
