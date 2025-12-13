@@ -88,7 +88,7 @@
         .login-container input {
             width: 100%;
             padding: 0.875rem 1rem;
-            border: 2px solid #e2e8f0;
+            border: 2px solid #cbd5e1 !important;
             border-radius: 0.5rem;
             font-size: 1rem;
             transition: border-color 0.2s;
@@ -3011,7 +3011,7 @@
 
             // Check if current user is Admin/Superuser
             const isAdmin = currentUser.rolle === 'admin' || currentUser.rolle === 'superuser' || currentUser.rolle === 'leitzentrale';
-            const canEdit = isAdmin && emergency.status === 'waiting_admin';
+            const canEdit = isAdmin; // Admin kann IMMER bearbeiten!
 
             if (canEdit) {
                 // EDITABLE for Admin
@@ -3803,24 +3803,48 @@
             listContainer.innerHTML = '<div class="loading-message">Lade Teilnehmer...</div>';
 
             try {
-                // Get all users from fcm_tokens (this shows who has registered)
-                const tokensRef = collection(db, 'fcm_tokens');
-                const querySnapshot = await getDocs(tokensRef);
+                const participants = [];
                 
-                if (querySnapshot.empty) {
+                // Load from fcm_tokens (users who have logged in)
+                const tokensRef = collection(db, 'fcm_tokens');
+                const tokensSnapshot = await getDocs(tokensRef);
+                tokensSnapshot.forEach(doc => {
+                    participants.push({ id: doc.id, ...doc.data(), source: 'fcm_tokens' });
+                });
+
+                // ALSO load from users collection (created by admin but not yet logged in)
+                const usersRef = collection(db, 'users');
+                const usersSnapshot = await getDocs(usersRef);
+                usersSnapshot.forEach(doc => {
+                    const userData = doc.data();
+                    // Check if already in participants (from fcm_tokens)
+                    const exists = participants.some(p => p.user_id === userData.app_nr);
+                    if (!exists) {
+                        participants.push({
+                            id: doc.id,
+                            user_id: userData.app_nr,
+                            user_name: `${userData.vorname} ${userData.nachname}`,
+                            user_rolle: userData.rolle,
+                            user_abteilung: userData.abteilung,
+                            fcm_token: null,
+                            source: 'users',
+                            not_logged_in: true
+                        });
+                    }
+                });
+                
+                if (participants.length === 0) {
                     listContainer.innerHTML = `
                         <div class="empty-message">
-                            <p style="font-size: 1.125rem; margin-bottom: 0.5rem;">Keine Teilnehmer registriert</p>
-                            <p style="font-size: 0.875rem;">Wenn sich Mitarbeiter anmelden, erscheinen sie hier.</p>
+                            <p style="font-size: 1.125rem; margin-bottom: 0.5rem;">Keine Teilnehmer</p>
+                            <p style="font-size: 0.875rem;">Erstellen Sie Mitarbeiter über "+ Benutzer hinzufügen"</p>
                         </div>
                     `;
                     return;
                 }
 
-                const participants = [];
-                querySnapshot.forEach(doc => {
-                    participants.push({ id: doc.id, ...doc.data() });
-                });
+                // Sort by user_id
+                participants.sort((a, b) => (a.user_id || '').localeCompare(b.user_id || ''));
 
                 // Render list
                 listContainer.innerHTML = '';
