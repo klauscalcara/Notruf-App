@@ -3516,17 +3516,6 @@
             window.currentEditParticipantId = participantId;
             window.isEditMode = true;
         }
-                    });
-                }
-                
-                alert('✅ Teilnehmer aktualisiert');
-                await loadParticipants();
-                
-            } catch (error) {
-                console.error('Error editing participant:', error);
-                alert('❌ Fehler beim Bearbeiten: ' + error.message);
-            }
-        }
 
         async function deleteParticipant(participantId, userName, userRolle) {
             // Check if trying to delete a superuser
