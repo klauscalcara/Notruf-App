@@ -2048,6 +2048,9 @@
     </div>
 
     <!-- Firebase SDK -->
+    <!-- jsPDF for PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
         import { getFirestore, collection, addDoc, query, where, getDocs, serverTimestamp, onSnapshot, orderBy, limit, doc, setDoc, updateDoc, deleteDoc, getDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
@@ -2088,11 +2091,14 @@
         window.switchDashboardTab = switchDashboardTab;
         window.takeEmergency = takeEmergency;
         window.completeEmergency = completeEmergency;
+        window.deleteEmergency = deleteEmergency;
+        window.generatePDF = generatePDF;
         window.showAddUserDialog = showAddUserDialog;
         window.editParticipant = editParticipant;
         window.deleteParticipant = deleteParticipant;
         window.closeReport = closeReport;
         window.saveEmployeeReport = saveEmployeeReport;
+        window.saveAdminReport = saveAdminReport;
         window.closeUserDialog = closeUserDialog;
         window.saveNewUser = saveNewUser;
         window.handlePhotoUpload = handlePhotoUpload;
@@ -3071,8 +3077,19 @@
                         <button class="report-btn report-btn-primary" onclick="saveAdminReport(true)">
                             ✅ Vorfall abschließen
                         </button>
+                        ${emergency.status === 'completed' ? `
+                            <button class="report-btn report-btn-secondary" onclick="generatePDF('${currentReportId}', false)">
+                                📄 PDF Ansehen
+                            </button>
+                            <button class="report-btn report-btn-secondary" onclick="generatePDF('${currentReportId}', true)">
+                                💾 PDF Speichern
+                            </button>
+                        ` : ''}
                         <button class="report-btn report-btn-secondary" onclick="closeReport()">
                             ✕ Schließen
+                        </button>
+                        <button class="report-btn" style="background: #7f1d1d; margin-top: 1rem;" onclick="deleteEmergency('${currentReportId}', true)">
+                            🗑️ Vorgang löschen
                         </button>
                     </div>
                 `;
@@ -3112,9 +3129,22 @@
                     </div>
 
                     <div class="report-actions">
+                        ${emergency.status === 'completed' ? `
+                            <button class="report-btn report-btn-secondary" onclick="generatePDF('${currentReportId}', false)">
+                                📄 PDF Ansehen
+                            </button>
+                            <button class="report-btn report-btn-secondary" onclick="generatePDF('${currentReportId}', true)">
+                                💾 PDF Speichern
+                            </button>
+                        ` : ''}
                         <button class="report-btn report-btn-secondary" onclick="closeReport()">
                             ✕ Schließen
                         </button>
+                        ${isAdmin ? `
+                            <button class="report-btn" style="background: #7f1d1d; margin-top: 1rem;" onclick="deleteEmergency('${currentReportId}', true)">
+                                🗑️ Vorgang löschen
+                            </button>
+                        ` : ''}
                     </div>
                 `;
             }
@@ -3664,6 +3694,9 @@
                     <button class="dashboard-btn dashboard-btn-view" onclick="viewReport('${emergency.id}')">
                         👁️ Bericht
                     </button>
+                    <button class="dashboard-btn" style="background: #7f1d1d;" onclick="deleteEmergency('${emergency.id}')">
+                        🗑️
+                    </button>
                 </div>
             `;
 
@@ -3712,6 +3745,149 @@
             } catch (error) {
                 console.error('Error completing emergency:', error);
                 alert('❌ Fehler beim Abschließen: ' + error.message);
+            }
+        }
+
+        async function deleteEmergency(emergencyId, fromReport = false) {
+            if (!confirm('⚠️ ACHTUNG!\n\nDiesen Vorgang wirklich LÖSCHEN?\n\nDies kann nicht rückgängig gemacht werden!')) {
+                return;
+            }
+
+            try {
+                const emergencyRef = doc(db, 'emergency_calls', emergencyId);
+                await deleteDoc(emergencyRef);
+
+                alert('✅ Vorgang gelöscht!');
+                
+                if (fromReport) {
+                    closeReport();
+                }
+                
+                await loadDashboardEmergencies();
+
+            } catch (error) {
+                console.error('Error deleting emergency:', error);
+                alert('❌ Fehler beim Löschen: ' + error.message);
+            }
+        }
+
+        async function generatePDF(emergencyId, download = false) {
+            try {
+                const emergencyRef = doc(db, 'emergency_calls', emergencyId);
+                const emergencySnap = await getDoc(emergencyRef);
+                
+                if (!emergencySnap.exists()) {
+                    alert('❌ Vorgang nicht gefunden');
+                    return;
+                }
+
+                const emergency = emergencySnap.data();
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+
+                // Header
+                doc.setFontSize(20);
+                doc.setTextColor(239, 68, 68);
+                doc.text('VORFALLBERICHT', 105, 20, { align: 'center' });
+                
+                doc.setFontSize(12);
+                doc.setTextColor(0, 0, 0);
+                
+                // Meta-Info
+                let y = 35;
+                doc.text(`Typ: ${emergency.typ === 'notfall_110' ? 'POLIZEI-NOTRUF (110)' : 'Unterstützungsanfrage'}`, 20, y);
+                y += 7;
+                doc.text(`Datum: ${emergency.timestamp ? new Date(emergency.timestamp.toDate()).toLocaleString('de-DE') : 'N/A'}`, 20, y);
+                y += 7;
+                doc.text(`Mitarbeiter: ${emergency.user_name || 'N/A'} (${emergency.user_dienststelle || 'N/A'})`, 20, y);
+                y += 7;
+                if (emergency.latitude && emergency.longitude) {
+                    doc.text(`GPS: ${emergency.latitude}, ${emergency.longitude}`, 20, y);
+                    y += 7;
+                }
+                
+                y += 5;
+                doc.line(20, y, 190, y);
+                y += 10;
+
+                // 1. Vorfallbeschreibung
+                doc.setFontSize(14);
+                doc.setTextColor(59, 130, 246);
+                doc.text('1. VORFALLBESCHREIBUNG (Mitarbeiter)', 20, y);
+                y += 7;
+                doc.setFontSize(10);
+                doc.setTextColor(0, 0, 0);
+                const employeeReport = emergency.employee_report || 'Noch nicht ausgefüllt';
+                const employeeLines = doc.splitTextToSize(employeeReport, 170);
+                doc.text(employeeLines, 20, y);
+                y += employeeLines.length * 5 + 10;
+
+                // 2. Zusammenfassung
+                doc.setFontSize(14);
+                doc.setTextColor(239, 68, 68);
+                doc.text('2. ZUSAMMENFASSUNG (Admin/Leitzentrale)', 20, y);
+                y += 7;
+                doc.setFontSize(10);
+                doc.setTextColor(0, 0, 0);
+                const adminSummary = emergency.admin_summary || 'Noch nicht ausgefüllt';
+                const summaryLines = doc.splitTextToSize(adminSummary, 170);
+                doc.text(summaryLines, 20, y);
+                y += summaryLines.length * 5 + 10;
+
+                // Neue Seite wenn nötig
+                if (y > 250) {
+                    doc.addPage();
+                    y = 20;
+                }
+
+                // 3. Maßnahmen
+                doc.setFontSize(14);
+                doc.setTextColor(239, 68, 68);
+                doc.text('3. DURCHGEFÜHRTE MASSNAHMEN (Admin)', 20, y);
+                y += 7;
+                doc.setFontSize(10);
+                doc.setTextColor(0, 0, 0);
+                const adminActions = emergency.admin_actions || 'Noch nicht ausgefüllt';
+                const actionsLines = doc.splitTextToSize(adminActions, 170);
+                doc.text(actionsLines, 20, y);
+                y += actionsLines.length * 5 + 10;
+
+                // 4. Ergebnis
+                if (y > 250) {
+                    doc.addPage();
+                    y = 20;
+                }
+                doc.setFontSize(14);
+                doc.setTextColor(239, 68, 68);
+                doc.text('4. ERGEBNIS UND ABSCHLUSS (Admin)', 20, y);
+                y += 7;
+                doc.setFontSize(10);
+                doc.setTextColor(0, 0, 0);
+                const adminResult = emergency.admin_result || 'Noch nicht ausgefüllt';
+                const resultLines = doc.splitTextToSize(adminResult, 170);
+                doc.text(resultLines, 20, y);
+
+                // Footer
+                doc.setFontSize(8);
+                doc.setTextColor(150, 150, 150);
+                const pageCount = doc.internal.getNumberOfPages();
+                for (let i = 1; i <= pageCount; i++) {
+                    doc.setPage(i);
+                    doc.text(`Seite ${i} von ${pageCount} - Erstellt am ${new Date().toLocaleString('de-DE')}`, 105, 290, { align: 'center' });
+                }
+
+                // Download oder Anzeigen
+                const filename = `Vorfallbericht_${emergency.user_name || 'Unbekannt'}_${new Date(emergency.timestamp?.toDate() || new Date()).toLocaleDateString('de-DE').replace(/\./g, '-')}.pdf`;
+                
+                if (download) {
+                    doc.save(filename);
+                } else {
+                    window.open(doc.output('bloburl'), '_blank');
+                }
+
+            } catch (error) {
+                console.error('Error generating PDF:', error);
+                alert('❌ Fehler beim Erstellen des PDFs: ' + error.message);
             }
         }
 
