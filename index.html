@@ -2114,7 +2114,7 @@
             const savedUser = localStorage.getItem('notrufUser');
             if (savedUser) {
                 currentUser = JSON.parse(savedUser);
-                showAppScreen();
+                await showAppScreen();
             }
 
             // Setup login form
@@ -2166,8 +2166,14 @@
                         return;
                     }
                 } else {
-                    // User exists - simple password check (in production, use proper auth)
+                    // User exists - check password
                     const userData = querySnapshot.docs[0].data();
+                    
+                    if (userData.password !== password) {
+                        showError('Ungültige App-Nummer oder Passwort');
+                        return;
+                    }
+                    
                     currentUser = {
                         id: querySnapshot.docs[0].id,
                         ...userData
@@ -2178,7 +2184,7 @@
                 localStorage.setItem('notrufUser', JSON.stringify(currentUser));
                 
                 // Show app screen
-                showAppScreen();
+                await showAppScreen();
 
             } catch (error) {
                 console.error('Login error:', error);
@@ -2186,7 +2192,7 @@
             }
         }
 
-        function showAppScreen() {
+        async function showAppScreen() {
             document.getElementById('loginScreen').classList.add('hidden');
             document.getElementById('appScreen').classList.add('active');
             
@@ -2199,7 +2205,7 @@
             if (currentUser.rolle === 'admin' || currentUser.rolle === 'superuser' || currentUser.rolle === 'leitzentrale') {
                 document.getElementById('dashboardBtn').style.display = 'inline-block';
                 // Zeige Dashboard direkt
-                showDashboard();
+                await showDashboard();
             } else {
                 // Normale User sehen Notruf-Buttons
                 // Setup push notifications with FCM
