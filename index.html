@@ -2049,11 +2049,7 @@
 
     <!-- Firebase SDK -->
     <!-- jsPDF for PDF generation -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script>
-        // Make jsPDF globally available
-        window.jsPDF = window.jspdf.jsPDF;
-    </script>
+    <script src="https://unpkg.com/jspdf@latest/dist/jspdf.umd.min.js"></script>
     
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
@@ -3786,13 +3782,14 @@
                 }
 
                 const emergency = emergencySnap.data();
-                const jsPDF = window.jsPDF;
                 
-                if (!jsPDF) {
-                    alert('❌ PDF-Bibliothek nicht geladen. Bitte Seite neu laden.');
+                // Check if jsPDF is loaded
+                if (!window.jspdf || !window.jspdf.jsPDF) {
+                    alert('❌ PDF-Bibliothek nicht geladen.\n\nBitte laden Sie die Seite neu (Strg+F5)');
                     return;
                 }
                 
+                const { jsPDF } = window.jspdf;
                 const doc = new jsPDF();
 
                 // Header
