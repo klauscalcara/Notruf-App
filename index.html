@@ -2818,13 +2818,13 @@
                     document.getElementById('loading').classList.remove('show');
                     
                     let message = typ === 'notfall_110' 
-                        ? '✅ POLIZEI-NOTRUF AUSGELÖST!\n\nIhre Kollegen wurden benachrichtigt.' 
-                        : '✅ UNTERSTÜTZUNG ANGEFORDERT!\n\nIhre Kollegen wurden benachrichtigt.';
+                        ? 'POLIZEI-NOTRUF AUSGELÖST!\n\nPolizei und Ihre Kollegen wurden benachrichtigt.\nStandort wurde übermittelt.' 
+                        : 'UNTERSTÜTZUNGS-NOTRUF AUSGELÖST!\n\nIhre Kollegen wurden benachrichtigt.\nStandort wurde übermittelt.';
                     
                     if (!currentPosition) {
-                        message += '\n\n⚠️ Hinweis: GPS-Standort war nicht verfügbar.';
-                    } else {
-                        message += '\nStandort wurde übermittelt.';
+                        message = typ === 'notfall_110'
+                            ? 'POLIZEI-NOTRUF AUSGELÖST!\n\nPolizei und Ihre Kollegen wurden benachrichtigt.\n\n⚠️ GPS-Standort war nicht verfügbar.'
+                            : 'UNTERSTÜTZUNGS-NOTRUF AUSGELÖST!\n\nIhre Kollegen wurden benachrichtigt.\n\n⚠️ GPS-Standort war nicht verfügbar.';
                     }
                     
                     alert(message);
@@ -2849,8 +2849,7 @@
             const emergencyRef = collection(db, 'emergency_calls');
             const q = query(
                 emergencyRef,
-                where('status', '==', 'active'),
-                orderBy('timestamp', 'desc')
+                where('status', '==', 'active')
             );
             
             emergencyListener = onSnapshot(q, (snapshot) => {
