@@ -3517,7 +3517,7 @@
             window.isEditMode = true;
         }
 
-        async function deleteParticipant(participantId, userName, userRolle) {
+        async function deleteParticipant(participantId, userName, userRolle, appNr) {
             // Check if trying to delete a superuser
             if (userRolle === 'superuser' && currentUser.rolle !== 'superuser') {
                 alert('⛔ ZUGRIFF VERWEIGERT!\n\nMaster Admin können nur von anderen Master Admins gelöscht werden!');
@@ -3529,29 +3529,18 @@
             }
 
             try {
-                console.log('Deleting participant:', participantId);
+                console.log('Deleting participant:', participantId, 'app_nr:', appNr);
                 
-                // Get participant data first (to get app_nr)
-                const tokenRef = doc(db, 'fcm_tokens', participantId);
-                const tokenSnap = await getDoc(tokenRef);
-                
-                console.log('tokenSnap.exists():', tokenSnap.exists());
-                
-                let appNr = null;
-                if (tokenSnap.exists()) {
-                    const data = tokenSnap.data();
-                    console.log('Token data:', data);
-                    appNr = data.user_id;
-                    console.log('Found app_nr:', appNr);
-                } else {
-                    console.log('Token document does not exist!');
+                // Delete from fcm_tokens (if exists)
+                try {
+                    const tokenRef = doc(db, 'fcm_tokens', participantId);
+                    await deleteDoc(tokenRef);
+                    console.log('Deleted from fcm_tokens');
+                } catch (error) {
+                    console.log('fcm_tokens delete error (might not exist):', error.message);
                 }
-                
-                // Delete from fcm_tokens
-                await deleteDoc(tokenRef);
-                console.log('Deleted from fcm_tokens');
 
-                // ALSO delete from users collection - delete ALL entries with this app_nr
+                // Delete from users collection using app_nr
                 if (appNr) {
                     const usersRef = collection(db, 'users');
                     const q = query(usersRef, where('app_nr', '==', appNr));
@@ -3562,14 +3551,14 @@
                     // Delete ALL matching users
                     const deletePromises = [];
                     userSnap.forEach(userDoc => {
-                        console.log('Deleting user doc:', userDoc.id);
+                        console.log('Deleting user doc:', userDoc.id, 'app_nr:', userDoc.data().app_nr);
                         deletePromises.push(deleteDoc(doc(db, 'users', userDoc.id)));
                     });
                     
                     await Promise.all(deletePromises);
-                    console.log('All users deleted');
+                    console.log('All users deleted from users collection');
                 } else {
-                    console.log('No app_nr found, skipping users collection delete');
+                    console.log('No app_nr provided, cannot delete from users collection');
                 }
 
                 alert('✅ Teilnehmer gelöscht');
@@ -4213,7 +4202,7 @@
                         ✏️ Bearbeiten
                     </button>
                     ${canDelete ? `
-                        <button class="participant-btn participant-btn-delete" onclick="deleteParticipant('${participant.id}', '${participant.user_name}', '${participant.user_rolle}')">
+                        <button class="participant-btn participant-btn-delete" onclick="deleteParticipant('${participant.id}', '${participant.user_name}', '${participant.user_rolle}', '${participant.user_id}')">
                             🗑️ Löschen
                         </button>
                     ` : `
