@@ -4155,29 +4155,6 @@
             return div;
         }
 
-        async function takeEmergency(emergencyId) {
-            if (!confirm('Diesen Notruf übernehmen und in Bearbeitung setzen?')) {
-                return;
-            }
-
-            try {
-                const emergencyRef = doc(db, 'emergency_calls', emergencyId);
-                await updateDoc(emergencyRef, {
-                    status: 'in_progress',
-                    admin_id: currentUser.id,
-                    admin_name: `${currentUser.vorname} ${currentUser.nachname}`,
-                    taken_at: serverTimestamp()
-                });
-
-                alert('✅ Notruf übernommen!');
-                await loadDashboardEmergencies();
-
-            } catch (error) {
-                console.error('Error taking emergency:', error);
-                alert('❌ Fehler beim Übernehmen: ' + error.message);
-            }
-        }
-
         async function completeEmergency(emergencyId) {
             if (!confirm('Diesen Notruf als abgeschlossen markieren?')) {
                 return;
