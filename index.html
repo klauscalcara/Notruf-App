@@ -1424,6 +1424,149 @@
             z-index: 9999;
         }
 
+        /* Incoming Alarm Overlay */
+        .incoming-alarm-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(220, 38, 38, 0.98);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: alarmPulse 1s ease-in-out infinite;
+        }
+
+        @keyframes alarmPulse {
+            0%, 100% { opacity: 0.98; }
+            50% { opacity: 1; }
+        }
+
+        .incoming-alarm-content {
+            text-align: center;
+            padding: 2rem;
+            max-width: 600px;
+            width: 90%;
+        }
+
+        .alarm-icon {
+            font-size: 6rem;
+            margin-bottom: 1rem;
+            animation: iconShake 0.5s ease-in-out infinite;
+        }
+
+        @keyframes iconShake {
+            0%, 100% { transform: rotate(-5deg); }
+            50% { transform: rotate(5deg); }
+        }
+
+        .alarm-title {
+            font-size: 2rem;
+            font-weight: 800;
+            color: white;
+            margin-bottom: 1.5rem;
+            text-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+
+        .alarm-user-info {
+            background: rgba(0,0,0,0.2);
+            padding: 1rem;
+            border-radius: 12px;
+            margin-bottom: 1rem;
+        }
+
+        .alarm-name {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 0.25rem;
+        }
+
+        .alarm-dept {
+            font-size: 1.125rem;
+            color: rgba(255,255,255,0.9);
+        }
+
+        .alarm-type-badge {
+            background: rgba(0,0,0,0.3);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin: 1.5rem 0;
+            display: inline-block;
+        }
+
+        .alarm-gps {
+            background: rgba(0,0,0,0.2);
+            padding: 1rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            color: white;
+            font-size: 1rem;
+            line-height: 1.6;
+        }
+
+        .gps-coords {
+            font-family: monospace;
+            font-size: 1.125rem;
+            font-weight: 600;
+        }
+
+        .gps-accuracy {
+            font-size: 0.875rem;
+            color: rgba(255,255,255,0.8);
+        }
+
+        .btn-take-emergency {
+            background: white;
+            color: #059669;
+            border: 4px solid white;
+            border-radius: 16px;
+            padding: 1.25rem 2.5rem;
+            font-size: 1.25rem;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+            transition: all 0.2s ease;
+            width: 100%;
+            margin-bottom: 1rem;
+        }
+
+        .btn-take-emergency:hover {
+            transform: scale(1.02);
+            box-shadow: 0 12px 30px rgba(0,0,0,0.4);
+        }
+
+        .btn-take-emergency:active {
+            transform: scale(0.98);
+        }
+
+        .btn-stop-alarm-only {
+            background: transparent;
+            color: white;
+            border: 3px solid white;
+            border-radius: 16px;
+            padding: 1rem 2.5rem;
+            font-size: 1.125rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            width: 100%;
+        }
+
+        .btn-stop-alarm-only:hover {
+            background: rgba(255,255,255,0.1);
+            transform: scale(1.02);
+        }
+
+        .btn-stop-alarm-only:active {
+            transform: scale(0.98);
+        }
+
         .loading.show {
             display: flex;
         }
@@ -2039,6 +2182,42 @@
         </div>
     </div>
 
+    <!-- Incoming Alarm Overlay - für empfangene Notrufe -->
+    <div class="incoming-alarm-overlay" id="incomingAlarmOverlay" style="display: none;">
+        <div class="incoming-alarm-content">
+            <div class="alarm-icon">🚨</div>
+            <div class="alarm-title" id="incomingAlarmTitle">NOTRUF AKTIV</div>
+            
+            <div class="alarm-user-info">
+                <div class="alarm-name" id="incomingAlarmName">-</div>
+                <div class="alarm-dept" id="incomingAlarmDept">-</div>
+            </div>
+            
+            <div class="alarm-type-badge" id="incomingAlarmType">
+                🚨 HAT POLIZEI-NOTRUF (110) AUSGELÖST
+            </div>
+            
+            <div class="alarm-gps" id="incomingAlarmGPS">
+                📍 GPS-Standort:<br>
+                <span class="gps-coords">-</span><br>
+                <span class="gps-accuracy">-</span>
+            </div>
+            
+            <button class="btn-take-emergency" onclick="takeEmergency()">
+                ✅ ÜBERNEHMEN UND ALARM STOPPEN
+            </button>
+            
+            <button class="btn-stop-alarm-only" onclick="stopAlarmOnly()">
+                🔕 NUR ALARM STOPPEN
+            </button>
+        </div>
+    </div>
+
+    <!-- Audio Element für Sirene -->
+    <audio id="alarmSirene" loop>
+        <source src="alarm.mp3" type="audio/mpeg">
+    </audio>
+
     <!-- Loading Overlay -->
     <div class="loading" id="loading">
         <div class="loading-content">
@@ -2634,11 +2813,10 @@
                 const docRef = await addDoc(collection(db, 'emergency_calls'), emergencyData);
                 console.log('Emergency saved:', docRef.id);
 
-                // Success
+                // Success - KEIN Alarm für User A (Auslöser)
                 setTimeout(() => {
                     document.getElementById('loading').classList.remove('show');
                     
-                    // Show success message
                     let message = typ === 'notfall_110' 
                         ? '✅ POLIZEI-NOTRUF AUSGELÖST!\n\nIhre Kollegen wurden benachrichtigt.' 
                         : '✅ UNTERSTÜTZUNG ANGEFORDERT!\n\nIhre Kollegen wurden benachrichtigt.';
@@ -2658,6 +2836,171 @@
                 alert('Fehler beim Auslösen des Notrufs. Bitte erneut versuchen.');
             }
         }
+
+        // Real-time Listener für neue Notrufe
+        let emergencyListener = null;
+        let currentAlarmEmergencyId = null;
+
+        function startEmergencyListener() {
+            if (emergencyListener) return; // Already listening
+            
+            console.log('Starting emergency listener...');
+            
+            const emergencyRef = collection(db, 'emergency_calls');
+            const q = query(
+                emergencyRef,
+                where('status', '==', 'active'),
+                orderBy('timestamp', 'desc')
+            );
+            
+            emergencyListener = onSnapshot(q, (snapshot) => {
+                snapshot.docChanges().forEach((change) => {
+                    if (change.type === 'added') {
+                        const emergency = { id: change.doc.id, ...change.doc.data() };
+                        
+                        // Nicht für den Auslöser selbst!
+                        if (emergency.user_id !== currentUser.id) {
+                            console.log('New emergency detected:', emergency);
+                            showIncomingAlarm(emergency);
+                        }
+                    }
+                    if (change.type === 'modified') {
+                        const emergency = { id: change.doc.id, ...change.doc.data() };
+                        
+                        // Wenn Status nicht mehr "active", Alarm stoppen
+                        if (currentAlarmEmergencyId === emergency.id && emergency.status !== 'active') {
+                            console.log('Emergency status changed, stopping alarm');
+                            stopIncomingAlarm();
+                        }
+                    }
+                });
+            });
+        }
+
+        function stopEmergencyListener() {
+            if (emergencyListener) {
+                emergencyListener();
+                emergencyListener = null;
+                console.log('Emergency listener stopped');
+            }
+        }
+
+        function showIncomingAlarm(emergency) {
+            console.log('Showing incoming alarm for:', emergency);
+            
+            currentAlarmEmergencyId = emergency.id;
+            
+            // Fülle Daten
+            document.getElementById('incomingAlarmName').textContent = emergency.user_name;
+            document.getElementById('incomingAlarmDept').textContent = emergency.user_dienststelle;
+            
+            // Typ
+            const typeText = emergency.typ === 'notfall_110' 
+                ? '🚨 HAT POLIZEI-NOTRUF (110) AUSGELÖST'
+                : '📢 HAT UNTERSTÜTZUNG ANGEFORDERT';
+            document.getElementById('incomingAlarmType').textContent = typeText;
+            
+            // GPS
+            if (emergency.gps_available) {
+                const coords = `${emergency.gps_latitude.toFixed(6)}, ${emergency.gps_longitude.toFixed(6)}`;
+                const accuracy = emergency.gps_accuracy ? `Genauigkeit: ±${Math.round(emergency.gps_accuracy)}m` : '';
+                document.querySelector('.gps-coords').textContent = coords;
+                document.querySelector('.gps-accuracy').textContent = accuracy;
+            } else {
+                document.querySelector('.gps-coords').textContent = 'Nicht verfügbar';
+                document.querySelector('.gps-accuracy').textContent = '';
+            }
+            
+            // Zeige Overlay
+            document.getElementById('incomingAlarmOverlay').style.display = 'flex';
+            
+            // Starte Sirene
+            const sirene = document.getElementById('alarmSirene');
+            sirene.volume = 1.0;
+            sirene.play().catch(error => {
+                console.error('Error playing alarm:', error);
+            });
+            
+            // Vibration
+            if ('vibrate' in navigator) {
+                const vibratePattern = [500, 200, 500, 200, 500, 200];
+                navigator.vibrate(vibratePattern);
+                window.alarmVibrateInterval = setInterval(() => {
+                    navigator.vibrate(vibratePattern);
+                }, 3000);
+            }
+        }
+
+        function stopIncomingAlarm() {
+            console.log('Stopping incoming alarm');
+            
+            // Verstecke Overlay
+            document.getElementById('incomingAlarmOverlay').style.display = 'none';
+            
+            // Stoppe Sirene
+            const sirene = document.getElementById('alarmSirene');
+            sirene.pause();
+            sirene.currentTime = 0;
+            
+            // Stoppe Vibration
+            if ('vibrate' in navigator) {
+                navigator.vibrate(0);
+                if (window.alarmVibrateInterval) {
+                    clearInterval(window.alarmVibrateInterval);
+                    window.alarmVibrateInterval = null;
+                }
+            }
+            
+            currentAlarmEmergencyId = null;
+        }
+
+        async function takeEmergency(emergencyIdParam) {
+            // Falls von Dashboard aufgerufen (mit Parameter) oder von Alarm-Screen (ohne Parameter)
+            const emergencyId = emergencyIdParam || currentAlarmEmergencyId;
+            
+            if (!emergencyId) {
+                console.error('No emergency ID provided');
+                return;
+            }
+            
+            try {
+                const emergencyRef = doc(db, 'emergency_calls', emergencyId);
+                await updateDoc(emergencyRef, {
+                    status: 'in_progress',
+                    uebernommen_von: `${currentUser.vorname} ${currentUser.nachname}`,
+                    uebernommen_von_id: currentUser.id,
+                    uebernommen_von_rolle: currentUser.rolle,
+                    uebernommen_at: serverTimestamp()
+                });
+                
+                console.log('Emergency taken:', emergencyId);
+                
+                // Wenn von Alarm-Screen aufgerufen, stoppe Alarm
+                if (currentAlarmEmergencyId === emergencyId) {
+                    stopIncomingAlarm();
+                }
+                
+                alert('✅ Notruf übernommen!\n\nSie sind jetzt für diesen Vorgang verantwortlich.');
+                
+                // Reload dashboard if visible
+                if (document.getElementById('dashboardScreen').classList.contains('active')) {
+                    await loadDashboardEmergencies();
+                }
+                
+            } catch (error) {
+                console.error('Error taking emergency:', error);
+                alert('❌ Fehler beim Übernehmen: ' + error.message);
+            }
+        }
+
+        function stopAlarmOnly() {
+            console.log('Stopping alarm only (local)');
+            stopIncomingAlarm();
+        }
+
+        // Globale Funktionen
+        window.takeEmergency = takeEmergency;
+        window.stopAlarmOnly = stopAlarmOnly;
 
         async function showHistory() {
             // Hide app screen, show history screen
@@ -3589,6 +3932,9 @@
             document.getElementById('historyScreen').classList.remove('active');
             document.getElementById('dashboardScreen').classList.add('active');
             
+            // STARTE Real-time Listener für Notrufe
+            startEmergencyListener();
+            
             // Load default tab (Notrufe)
             await switchDashboardTab('notrufe');
         }
@@ -3720,7 +4066,7 @@
                     break;
                 case 'in_progress':
                     statusBadge = 'status-in-progress';
-                    statusText = 'In Bearbeitung';
+                    statusText = emergency.uebernommen_von ? `✅ Bearb: ${emergency.uebernommen_von}` : 'In Bearbeitung';
                     break;
                 case 'waiting_employee':
                     statusBadge = 'status-waiting-employee';
