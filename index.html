@@ -3535,10 +3535,16 @@
                 const tokenRef = doc(db, 'fcm_tokens', participantId);
                 const tokenSnap = await getDoc(tokenRef);
                 
+                console.log('tokenSnap.exists():', tokenSnap.exists());
+                
                 let appNr = null;
                 if (tokenSnap.exists()) {
-                    appNr = tokenSnap.data().user_id;
+                    const data = tokenSnap.data();
+                    console.log('Token data:', data);
+                    appNr = data.user_id;
                     console.log('Found app_nr:', appNr);
+                } else {
+                    console.log('Token document does not exist!');
                 }
                 
                 // Delete from fcm_tokens
@@ -3562,6 +3568,8 @@
                     
                     await Promise.all(deletePromises);
                     console.log('All users deleted');
+                } else {
+                    console.log('No app_nr found, skipping users collection delete');
                 }
 
                 alert('✅ Teilnehmer gelöscht');
