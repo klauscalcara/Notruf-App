@@ -2380,6 +2380,9 @@
             const userDept = currentUser.abteilung;
             document.getElementById('userName').textContent = `${userName} • ${userDept}`;
 
+            // 🚨 WICHTIG: Starte Alarm-Listener für ALLE User (Admin + Normal)
+            startEmergencyListener();
+
             // Admin/Superuser/Leitzentrale gehen DIREKT ins Dashboard
             if (currentUser.rolle === 'admin' || currentUser.rolle === 'superuser' || currentUser.rolle === 'leitzentrale') {
                 document.getElementById('dashboardBtn').style.display = 'inline-block';
@@ -2842,9 +2845,12 @@
         let currentAlarmEmergencyId = null;
 
         function startEmergencyListener() {
-            if (emergencyListener) return; // Already listening
+            if (emergencyListener) {
+                console.log('✅ Emergency listener already running');
+                return; // Already listening
+            }
             
-            console.log('Starting emergency listener...');
+            console.log('🚨 Starting emergency listener for ALL users...');
             
             const emergencyRef = collection(db, 'emergency_calls');
             const q = query(
@@ -3931,7 +3937,7 @@
             document.getElementById('historyScreen').classList.remove('active');
             document.getElementById('dashboardScreen').classList.add('active');
             
-            // STARTE Real-time Listener für Notrufe
+            // Starte Listener (falls noch nicht gestartet - Backup)
             startEmergencyListener();
             
             // Load default tab (Notrufe)
