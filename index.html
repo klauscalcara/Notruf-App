@@ -2947,13 +2947,22 @@
             sirene.pause();
             sirene.currentTime = 0;
             
-            // Stoppe Vibration
+            // Stoppe Vibration (robuste Methode für alle Handys)
             if ('vibrate' in navigator) {
+                // Stoppe laufende Vibration
                 navigator.vibrate(0);
+                navigator.vibrate([]);
+                
+                // Stoppe Vibrations-Interval
                 if (window.alarmVibrateInterval) {
                     clearInterval(window.alarmVibrateInterval);
                     window.alarmVibrateInterval = null;
                 }
+                
+                // Nochmal sicherstellen dass Vibration aus ist
+                setTimeout(() => {
+                    navigator.vibrate(0);
+                }, 100);
             }
             
             currentAlarmEmergencyId = null;
@@ -3323,7 +3332,8 @@
         function renderEmployeeReport(emergency, emergencyId) {
             const contentDiv = document.getElementById('reportContent');
             
-            const canEdit = emergency.status === 'active' || emergency.status === 'waiting_employee';
+            // User kann editieren solange er noch nicht submitted hat (unabhängig vom Status!)
+            const canEdit = !emergency.submitted_to_admin_at;
             const employeeReport = emergency.employee_report || '';
 
             contentDiv.innerHTML = `
