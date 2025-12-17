@@ -4187,9 +4187,15 @@
                             ✅ Abschließen
                         </button>
                     ` : ''}
-                    <button class="dashboard-btn dashboard-btn-view" onclick="viewReport('${emergency.id}')">
-                        👁️ Bericht
-                    </button>
+                    ${emergency.user_id === currentUser.id && !emergency.submitted_to_admin_at ? `
+                        <button class="dashboard-btn dashboard-btn-view" onclick="fillReport('${emergency.id}')">
+                            ${emergency.employee_report ? '✏️ Bearbeiten' : '📝 Ausfüllen'}
+                        </button>
+                    ` : `
+                        <button class="dashboard-btn dashboard-btn-view" onclick="viewReport('${emergency.id}')">
+                            👁️ Bericht
+                        </button>
+                    `}
                     <button class="dashboard-btn" style="background: #7f1d1d;" onclick="deleteEmergency('${emergency.id}')">
                         🗑️
                     </button>
