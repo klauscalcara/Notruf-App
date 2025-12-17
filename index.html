@@ -2864,10 +2864,21 @@
                         const emergency = { id: change.doc.id, ...change.doc.data() };
                         
                         // Nicht für den Auslöser selbst!
-                        if (emergency.user_id !== currentUser.id) {
-                            console.log('New emergency detected:', emergency);
-                            showIncomingAlarm(emergency);
+                        if (emergency.user_id === currentUser.id) {
+                            return;
                         }
+                        
+                        // NUR Notrufe der letzten 5 Minuten zeigen (ignoriere alte Notrufe beim App-Start!)
+                        const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+                        const emergencyTime = emergency.timestamp?.toDate();
+                        
+                        if (!emergencyTime || emergencyTime < fiveMinutesAgo) {
+                            console.log('Ignoring old emergency (older than 5 minutes)');
+                            return;
+                        }
+                        
+                        console.log('New emergency detected:', emergency);
+                        showIncomingAlarm(emergency);
                     }
                     if (change.type === 'modified') {
                         const emergency = { id: change.doc.id, ...change.doc.data() };
@@ -3332,9 +3343,23 @@
         function renderEmployeeReport(emergency, emergencyId) {
             const contentDiv = document.getElementById('reportContent');
             
-            // User kann editieren solange er noch nicht submitted hat (unabhängig vom Status!)
-            const canEdit = !emergency.submitted_to_admin_at;
+            // User kann editieren wenn:
+            // 1. Er ist der Auslöser (emergency.user_id === currentUser.id)
+            // 2. UND er hat noch nicht an Admin übergeben (!submitted_to_admin_at)
+            const isOwnEmergency = emergency.user_id === currentUser.id;
+            const notSubmitted = !emergency.submitted_to_admin_at;
+            const canEdit = isOwnEmergency && notSubmitted;
+            
             const employeeReport = emergency.employee_report || '';
+            
+            // Debug-Info
+            console.log('Bericht Edit-Check:', {
+                isOwnEmergency,
+                notSubmitted,
+                canEdit,
+                user_id: emergency.user_id,
+                currentUser_id: currentUser.id
+            });
 
             contentDiv.innerHTML = `
                 <div class="report-info-box">
@@ -3364,7 +3389,9 @@
                         </button>
                     ` : `
                         <div style="color: rgba(255,255,255,0.7); padding: 0.5rem;">
-                            🔒 Bericht wurde an Admin übergeben und kann nicht mehr bearbeitet werden.
+                            ${!isOwnEmergency ? 
+                                '🔒 Dies ist nicht Ihr Notruf. Nur der Auslöser kann den Bericht ausfüllen.' : 
+                                '🔒 Bericht wurde an Admin übergeben und kann nicht mehr bearbeitet werden.'}
                         </div>
                     `}
                     <button class="report-btn report-btn-secondary" onclick="closeReport()">
